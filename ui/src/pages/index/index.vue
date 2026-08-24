@@ -55,12 +55,12 @@ export default {
   },
   methods: {
     onShow() {
-      // 诊断：测试 popen 在同步线程是否工作
+      // 诊断：测试 popen 在同步线程是否工作，结果放状态栏
       try {
         const test = TsCtl.testPopen()
-        this.selfIp = test
+        this.statusText = 'popen: ' + test
       } catch(e) {
-        this.selfIp = 'test failed: ' + String(e)
+        this.statusText = 'popen err: ' + String(e)
       }
       this.refresh()
     },
