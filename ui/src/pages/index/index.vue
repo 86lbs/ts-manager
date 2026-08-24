@@ -55,6 +55,13 @@ export default {
   },
   methods: {
     onShow() {
+      // 诊断：测试 popen 在同步线程是否工作
+      try {
+        const test = TsCtl.testPopen()
+        this.selfIp = test
+      } catch(e) {
+        this.selfIp = 'test failed: ' + String(e)
+      }
       this.refresh()
     },
     onUnload() {},

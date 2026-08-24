@@ -88,8 +88,9 @@ bool TsCtl::runTailscale(const std::string &args, std::string &output) const
     }
     int rc;
     output = execCmd(std::string(kTailscaleCli) + " --socket=" + kSocket + " " + args + " 2>&1", rc);
-    // popen/pclose 成功即认为命令执行成功，错误信息在 output 里
-    return rc != -1;
+    // 只要 popen 执行成功就算成功，把退出码附在输出前面方便诊断
+    output = "[rc=" + std::to_string(rc) + "] " + output;
+    return true;
 }
 
 bool TsCtl::startDaemon(std::string &output) const
