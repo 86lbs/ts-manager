@@ -22,7 +22,7 @@ screen:
 input_method: { version: "unverified", global_text_edit: untested, textarea_soft_input: untested }
 media: { gstreamer: "unverified", decoder: "unverified", kms_driver: "unverified", connector: "DSI-1", crtc: null, plane: null }
 package:
-  appid: "8001999999999999 (placeholder)"
+  appid: "800186lbstsmanage"
   version: "0.1.0"
   start_page: "index"
   install_layout: "/userdisk/miniapp/data/mini_app/pkg/<appid>/a/"
