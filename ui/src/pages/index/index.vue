@@ -73,11 +73,16 @@ export default {
             const ips = j.Self && j.Self.TailscaleIPs ? j.Self.TailscaleIPs : []
             this.selfIp = ips.length ? ips[0] : '—'
             this.selfName = self.HostName || '—'
-            this.up = true
+            // 根据 BackendState 判断连接状态
+            const state = self.BackendState || ''
+            this.up = state === 'Running' || ips.length > 0
           } catch (e) {
             this.selfIp = '—'
             this.selfName = '—'
+            this.up = false
           }
+        } else {
+          this.up = false
         }
         this.statusText = '已刷新'
       } catch (e) {
