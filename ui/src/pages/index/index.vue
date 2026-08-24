@@ -72,15 +72,14 @@ export default {
       try {
         this.daemonRunning = !!TsCtl.isDaemonRunning()
         this.version = TsCtl.getVersion() || '未安装'
-        const res = await TsCtl.runTailscale('status --json')
-        if (res && res.ok && res.output) {
+        const raw = await TsCtl.runTailscale('status --json')
+        if (raw) {
           try {
-            const j = JSON.parse(res.output)
+            const j = JSON.parse(raw)
             const self = j.Self || {}
             const ips = j.Self && j.Self.TailscaleIPs ? j.Self.TailscaleIPs : []
             this.selfIp = ips.length ? ips[0] : '—'
             this.selfName = self.HostName || '—'
-            // 根据 BackendState 判断连接状态
             const state = self.BackendState || ''
             this.up = state === 'Running' || ips.length > 0
           } catch (e) {
@@ -102,8 +101,8 @@ export default {
       this.statusText = this.up ? '断开中…' : '连接中…'
       try {
         const cmd = this.up ? 'down' : 'up'
-        const res = await TsCtl.runTailscale(cmd)
-        this.statusText = res && res.ok ? '完成' : '失败: ' + ((res && res.output) || '')
+        const output = await TsCtl.runTailscale(cmd)
+        this.statusText = output ? '完成' : '失败: ' + (output || '')
         this.refresh()
       } catch (e) {
         this.statusText = '错误: ' + (e && e.message ? e.message : String(e))

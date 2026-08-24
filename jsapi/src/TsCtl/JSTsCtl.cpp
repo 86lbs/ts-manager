@@ -94,7 +94,7 @@ void JSTsCtl::runTailscale(JQAsyncInfo &info)
         if (!o->runTailscale(args, output))
             info.postError(output.empty() ? "tailscale failed" : output);
         else
-            info.post(Bson::object{{"ok", true}, {"output", output}});
+            info.post(output);  // 直接 post 字符串，像 PenTool 一样
     } catch (const std::exception &e) {
         info.postError(e.what());
     }
