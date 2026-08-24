@@ -25,10 +25,10 @@
       </div>
 
       <div class="btn primary" @click="refresh">
-        <text>刷新状态</text>
+        <text class="btn-label">刷新状态</text>
       </div>
       <div class="btn" @click="toggleUp">
-        <text>{{ up ? '断开 (down)' : '上线 (up)' }}</text>
+        <text class="btn-label">{{ up ? '断开 (down)' : '上线 (up)' }}</text>
       </div>
 
       <text class="hint">{{ statusText }}</text>
@@ -160,7 +160,7 @@ export default {
   margin-bottom: 12px;
 }
 
-.btn text {
+.btn-label {
   color: #ffffff;
   font-size: 28px;
 }
