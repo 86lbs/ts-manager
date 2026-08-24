@@ -37,7 +37,7 @@ public:
     bool writeConfigFile(const std::string &name, const std::string &content) const;
 
 private:
-    std::string execCmd(const std::string &cmd, std::string &output) const;
+    std::string execCmd(const std::string &cmd, int &exitCode) const;
 
     mutable std::mutex mutex_;
 };

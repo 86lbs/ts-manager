@@ -1,3 +1,5 @@
+#include <sys/wait.h>
+
 #include "TsCtl.hpp"
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -24,29 +26,27 @@ bool fileExists(const std::string &path)
 TsCtl::TsCtl() = default;
 TsCtl::~TsCtl() = default;
 
-// 执行任意 shell 命令，捕获 stdout；返回 0 成功（退出码）
-std::string TsCtl::execCmd(const std::string &cmd, std::string &output) const
+// 执行任意 shell 命令，捕获 stdout；返回 stdout，exitCode 填退出码
+std::string TsCtl::execCmd(const std::string &cmd, int &exitCode) const
 {
     FILE *fp = ::popen(cmd.c_str(), "r");
     if (!fp) {
-        output = "popen failed";
+        exitCode = -1;
         return "";
     }
     char buf[4096];
     std::stringstream ss;
     while (::fgets(buf, sizeof(buf), fp) != nullptr)
         ss << buf;
-    int rc = ::pclose(fp);
-    output = ss.str();
-    (void)rc;
-    return output;
+    exitCode = ::pclose(fp);
+    return ss.str();
 }
 
 std::string TsCtl::getVersion() const
 {
-    std::string out;
     if (!fileExists(kTailscaleCli)) return "not-installed";
-    execCmd(std::string(kTailscaleCli) + " --socket=" + kSocket + " version 2>/dev/null | head -1", out);
+    int rc;
+    std::string out = execCmd(std::string(kTailscaleCli) + " --socket=" + kSocket + " version 2>/dev/null | head -1", rc);
     // 去掉尾部空白
     while (!out.empty() && (out.back() == '\n' || out.back() == '\r')) out.pop_back();
     return out;
@@ -86,8 +86,10 @@ bool TsCtl::runTailscale(const std::string &args, std::string &output) const
         output = "tailscale not installed";
         return false;
     }
-    execCmd(std::string(kTailscaleCli) + " --socket=" + kSocket + " " + args + " 2>&1", output);
-    return !output.empty();
+    int rc;
+    output = execCmd(std::string(kTailscaleCli) + " --socket=" + kSocket + " " + args + " 2>&1", rc);
+    // 退出码 0 表示成功（pclose 返回的 exit status 需 >> 8）
+    return WIFEXITED(rc) && WEXITSTATUS(rc) == 0;
 }
 
 bool TsCtl::startDaemon(std::string &output) const
@@ -96,6 +98,7 @@ bool TsCtl::startDaemon(std::string &output) const
         output = "start_tailscale.sh missing";
         return false;
     }
-    execCmd(std::string("sh ") + kStartScript + " 2>&1", output);
+    int rc;
+    output = execCmd(std::string("sh ") + kStartScript + " 2>&1", rc);
     return true;
 }
