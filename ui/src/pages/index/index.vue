@@ -160,6 +160,11 @@ export default {
   margin-bottom: 12px;
 }
 
+.btn text {
+  color: #ffffff;
+  font-size: 28px;
+}
+
 .btn.primary {
   background-color: @primary;
 }
