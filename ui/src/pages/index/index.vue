@@ -27,8 +27,11 @@
       <div class="btn primary" @click="refresh">
         <text class="btn-label">刷新状态</text>
       </div>
-      <div class="btn" @click="toggleUp">
-        <text class="btn-label">{{ up ? '断开 (down)' : '上线 (up)' }}</text>
+      <div class="btn up" @click="doUp">
+        <text class="btn-label">上线 (up)</text>
+      </div>
+      <div class="btn down" @click="doDown">
+        <text class="btn-label">断开 (down)</text>
       </div>
 
       <text class="hint">{{ statusText }}</text>
@@ -97,12 +100,21 @@ export default {
         this.refreshing = false
       }
     },
-    async toggleUp() {
-      this.statusText = this.up ? '断开中…' : '连接中…'
+    async doUp() {
+      this.statusText = '连接中…'
       try {
-        const cmd = this.up ? 'down' : 'up'
-        const output = await TsCtl.runTailscale(cmd)
-        this.statusText = output ? '完成' : '失败: ' + (output || '')
+        const output = await TsCtl.runTailscale('up --accept-routes')
+        this.statusText = output ? '上线完成' : '失败: ' + (output || '')
+        this.refresh()
+      } catch (e) {
+        this.statusText = '错误: ' + (e && e.message ? e.message : String(e))
+      }
+    },
+    async doDown() {
+      this.statusText = '断开中…'
+      try {
+        const output = await TsCtl.runTailscale('down')
+        this.statusText = output ? '断开完成' : '失败: ' + (output || '')
         this.refresh()
       } catch (e) {
         this.statusText = '错误: ' + (e && e.message ? e.message : String(e))
@@ -178,6 +190,14 @@ export default {
 
 .btn.primary {
   background-color: @primary;
+}
+
+.btn.up {
+  background-color: #27ae60;
+}
+
+.btn.down {
+  background-color: #c0392b;
 }
 
 .btn:active {
