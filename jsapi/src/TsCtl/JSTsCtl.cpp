@@ -55,8 +55,11 @@ void JSTsCtl::readConfigFile(JQFunctionInfo &info)
 {
     try {
         ASSERT(info.Length() == 1);
-        ASSERT(info[0].is_string());
-        std::string name = info[0].string_value();
+        JSContext *ctx = info.GetContext();
+        const char *p = JS_ToCString(ctx, info[0]);
+        if (!p) { info.GetReturnValue().ThrowInternalError("bad arg"); return; }
+        std::string name(p);
+        JS_FreeCString(ctx, p);
         TsCtl *o = getObj(); ASSERT(o != nullptr);
         info.GetReturnValue().Set(o->readConfigFile(name));
     } catch (const std::exception &e) {
