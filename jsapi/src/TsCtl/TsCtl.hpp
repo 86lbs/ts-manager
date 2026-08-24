@@ -25,7 +25,9 @@ public:
     // name: "bridge.conf" 等；不存在返回空串
     std::string readConfigFile(const std::string &name) const;
 
-    // ---- 异步阻塞操作（Promise handler 调用）----
+    // ---- test ----
+    // 测试 popen 在异步线程是否正常工作
+    std::string testPopen() const;
     // 执行 tailscale CLI 命令，返回 stdout
     // args: 传给 tailscale 的参数（如 "status --json"）
     bool runTailscale(const std::string &args, std::string &output) const;

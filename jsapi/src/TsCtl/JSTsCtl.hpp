@@ -17,6 +17,7 @@ public:
     void getVersion(JQFunctionInfo &info);
     void isDaemonRunning(JQFunctionInfo &info);
     void readConfigFile(JQFunctionInfo &info);
+    void testPopen(JQFunctionInfo &info);
 
     // 异步阻塞操作
     void runTailscale(JQAsyncInfo &info);

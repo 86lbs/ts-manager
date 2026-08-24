@@ -102,3 +102,11 @@ bool TsCtl::startDaemon(std::string &output) const
     output = execCmd(std::string("sh ") + kStartScript + " 2>&1", rc);
     return true;
 }
+
+// ---- test ----
+std::string TsCtl::testPopen() const
+{
+    int rc;
+    std::string out = execCmd("echo 'popen_ok' 2>&1", rc);
+    return out + "|rc=" + std::to_string(rc);
+}

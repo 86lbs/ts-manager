@@ -13,6 +13,7 @@ extern JSValue createTsCtl(JQModuleEnv *env)
     tpl->SetProtoMethod("getVersion", &JSTsCtl::getVersion);
     tpl->SetProtoMethod("isDaemonRunning", &JSTsCtl::isDaemonRunning);
     tpl->SetProtoMethod("readConfigFile", &JSTsCtl::readConfigFile);
+    tpl->SetProtoMethod("testPopen", &JSTsCtl::testPopen);
 
     tpl->SetProtoMethodPromise("runTailscale", &JSTsCtl::runTailscale);
     tpl->SetProtoMethodPromise("startDaemon", &JSTsCtl::startDaemon);
@@ -62,6 +63,17 @@ void JSTsCtl::readConfigFile(JQFunctionInfo &info)
         JS_FreeCString(ctx, p);
         TsCtl *o = getObj(); ASSERT(o != nullptr);
         info.GetReturnValue().Set(o->readConfigFile(name));
+    } catch (const std::exception &e) {
+        info.GetReturnValue().ThrowInternalError(e.what());
+    }
+}
+
+void JSTsCtl::testPopen(JQFunctionInfo &info)
+{
+    try {
+        ASSERT(info.Length() == 0);
+        TsCtl *o = getObj(); ASSERT(o != nullptr);
+        info.GetReturnValue().Set(o->testPopen());
     } catch (const std::exception &e) {
         info.GetReturnValue().ThrowInternalError(e.what());
     }
