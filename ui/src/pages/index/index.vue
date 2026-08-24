@@ -1,37 +1,39 @@
 <template>
-  <div class="page">
-    <text class="app-title">Tailscale Manager</text>
+  <scroller class="scroller">
+    <div class="page">
+      <text class="app-title">Tailscale Manager</text>
 
-    <div class="card">
-      <div class="row">
-        <text class="label">运行状态</text>
-        <text class="value" :class="daemonRunning ? 'ok' : 'bad'">
-          {{ daemonRunning ? '运行中' : '未运行' }}
-        </text>
+      <div class="card">
+        <div class="row">
+          <text class="label">运行状态</text>
+          <text class="value" :class="daemonRunning ? 'ok' : 'bad'">
+            {{ daemonRunning ? '运行中' : '未运行' }}
+          </text>
+        </div>
+        <div class="row">
+          <text class="label">版本</text>
+          <text class="value">{{ version }}</text>
+        </div>
+        <div class="row">
+          <text class="label">本机 IP</text>
+          <text class="value mono">{{ selfIp }}</text>
+        </div>
+        <div class="row">
+          <text class="label">主机名</text>
+          <text class="value">{{ selfName }}</text>
+        </div>
       </div>
-      <div class="row">
-        <text class="label">版本</text>
-        <text class="value">{{ version }}</text>
-      </div>
-      <div class="row">
-        <text class="label">本机 IP</text>
-        <text class="value mono">{{ selfIp }}</text>
-      </div>
-      <div class="row">
-        <text class="label">主机名</text>
-        <text class="value">{{ selfName }}</text>
-      </div>
-    </div>
 
-    <div class="btn primary" @click="refresh">
-      <text>刷新状态</text>
-    </div>
-    <div class="btn" @click="toggleUp">
-      <text>{{ up ? '断开 (down)' : '上线 (up)' }}</text>
-    </div>
+      <div class="btn primary" @click="refresh">
+        <text>刷新状态</text>
+      </div>
+      <div class="btn" @click="toggleUp">
+        <text>{{ up ? '断开 (down)' : '上线 (up)' }}</text>
+      </div>
 
-    <text class="hint">{{ statusText }}</text>
-  </div>
+      <text class="hint">{{ statusText }}</text>
+    </div>
+  </scroller>
 </template>
 
 <script>
@@ -63,7 +65,6 @@ export default {
       try {
         this.daemonRunning = !!TsCtl.isDaemonRunning()
         this.version = TsCtl.getVersion() || '未安装'
-        // 状态 JSON 解析：取 Self 的 IP 和主机名
         const res = await TsCtl.runTailscale('status --json')
         if (res && res.ok && res.output) {
           try {
@@ -103,56 +104,60 @@ export default {
 <style lang="less" scoped>
 @import "base.less";
 
+.scroller {
+  width: 750rpx;
+  height: 100%;
+}
+
 .page {
-  flex: 1;
   flex-direction: column;
-  padding: 24px;
+  padding: 20px;
   background-color: @background-color;
 }
 
 .app-title {
-  font-size: 44px;
+  font-size: 36px;
   color: @text-color;
   font-weight: bold;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .card {
   flex-direction: column;
-  padding: 24px;
+  padding: 16px;
   border-radius: @radius-medium;
   background-color: @card-background-color;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .row {
   flex-direction: row;
   justify-content: space-between;
-  padding: 8px 0;
+  padding: 6px 0;
 }
 
 .label {
-  font-size: 26px;
+  font-size: 24px;
   color: @text-secondary;
 }
 
 .value {
-  font-size: 26px;
+  font-size: 24px;
   color: @text-color;
 }
 
 .value.ok { color: #2ecc71; }
 .value.bad { color: #e74c3c; }
-.value.mono { font-size: 24px; }
+.value.mono { font-size: 22px; }
 
 .btn {
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  height: 80px;
+  height: 64px;
   border-radius: @radius-medium;
   background-color: @card-background-color;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .btn.primary {
@@ -164,7 +169,7 @@ export default {
 }
 
 .hint {
-  font-size: 22px;
+  font-size: 20px;
   color: @text-secondary;
   text-align: center;
   margin-top: 8px;
