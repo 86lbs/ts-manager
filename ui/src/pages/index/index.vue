@@ -1,0 +1,173 @@
+<template>
+  <div class="page">
+    <text class="app-title">Tailscale Manager</text>
+
+    <div class="card">
+      <div class="row">
+        <text class="label">运行状态</text>
+        <text class="value" :class="daemonRunning ? 'ok' : 'bad'">
+          {{ daemonRunning ? '运行中' : '未运行' }}
+        </text>
+      </div>
+      <div class="row">
+        <text class="label">版本</text>
+        <text class="value">{{ version }}</text>
+      </div>
+      <div class="row">
+        <text class="label">本机 IP</text>
+        <text class="value mono">{{ selfIp }}</text>
+      </div>
+      <div class="row">
+        <text class="label">主机名</text>
+        <text class="value">{{ selfName }}</text>
+      </div>
+    </div>
+
+    <div class="btn primary" @click="refresh">
+      <text>刷新状态</text>
+    </div>
+    <div class="btn" @click="toggleUp">
+      <text>{{ up ? '断开 (down)' : '上线 (up)' }}</text>
+    </div>
+
+    <text class="hint">{{ statusText }}</text>
+  </div>
+</template>
+
+<script>
+import { TsCtl } from 'tsctl'
+
+export default {
+  name: 'PageIndex',
+  props: [],
+  data() {
+    return {
+      daemonRunning: false,
+      version: '—',
+      selfIp: '—',
+      selfName: '—',
+      up: false,
+      statusText: '',
+      refreshing: false,
+    }
+  },
+  methods: {
+    onShow() {
+      this.refresh()
+    },
+    onUnload() {},
+    async refresh() {
+      if (this.refreshing) return
+      this.refreshing = true
+      this.statusText = '刷新中…'
+      try {
+        this.daemonRunning = !!TsCtl.isDaemonRunning()
+        this.version = TsCtl.getVersion() || '未安装'
+        // 状态 JSON 解析：取 Self 的 IP 和主机名
+        const res = await TsCtl.runTailscale('status --json')
+        if (res && res.ok && res.output) {
+          try {
+            const j = JSON.parse(res.output)
+            const self = j.Self || {}
+            const ips = j.Self && j.Self.TailscaleIPs ? j.Self.TailscaleIPs : []
+            this.selfIp = ips.length ? ips[0] : '—'
+            this.selfName = self.HostName || '—'
+            this.up = true
+          } catch (e) {
+            this.selfIp = '—'
+            this.selfName = '—'
+          }
+        }
+        this.statusText = '已刷新'
+      } catch (e) {
+        this.statusText = '错误: ' + (e && e.message ? e.message : String(e))
+      } finally {
+        this.refreshing = false
+      }
+    },
+    async toggleUp() {
+      this.statusText = this.up ? '断开中…' : '连接中…'
+      try {
+        const cmd = this.up ? 'down' : 'up'
+        const res = await TsCtl.runTailscale(cmd)
+        this.statusText = res && res.ok ? '完成' : '失败: ' + ((res && res.output) || '')
+        this.refresh()
+      } catch (e) {
+        this.statusText = '错误: ' + (e && e.message ? e.message : String(e))
+      }
+    },
+  },
+}
+</script>
+
+<style lang="less" scoped>
+@import "base.less";
+
+.page {
+  flex: 1;
+  flex-direction: column;
+  padding: 24px;
+  background-color: @background-color;
+}
+
+.app-title {
+  font-size: 44px;
+  color: @text-color;
+  font-weight: bold;
+  margin-bottom: 24px;
+}
+
+.card {
+  flex-direction: column;
+  padding: 24px;
+  border-radius: @radius-medium;
+  background-color: @card-background-color;
+  margin-bottom: 24px;
+}
+
+.row {
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.label {
+  font-size: 26px;
+  color: @text-secondary;
+}
+
+.value {
+  font-size: 26px;
+  color: @text-color;
+}
+
+.value.ok { color: #2ecc71; }
+.value.bad { color: #e74c3c; }
+.value.mono { font-size: 24px; }
+
+.btn {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  height: 80px;
+  border-radius: @radius-medium;
+  background-color: @card-background-color;
+  margin-bottom: 16px;
+}
+
+.btn.primary {
+  background-color: @primary;
+}
+
+.btn:active {
+  opacity: 0.6;
+}
+
+.hint {
+  font-size: 22px;
+  color: @text-secondary;
+  text-align: center;
+  margin-top: 8px;
+  lines: 2;
+}
+</style>

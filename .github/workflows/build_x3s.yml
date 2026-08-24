@@ -1,0 +1,54 @@
+name: Build ts-manager for X3S & Upload AMR
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+env:
+  TOOLCHAIN_URL: https://github.com/penosext/Cloudpan/releases/download/toolchains/aarch64--glibc--stable-2018.11-1.tar.bz2
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: ''
+
+      - name: Install toolchain
+        run: |
+          mkdir -p jsapi/toolchains
+          wget -q ${{ env.TOOLCHAIN_URL }} -O ./jsapi/toolchains/aarch64-toolchain.tar.bz2
+          tar -xjf ./jsapi/toolchains/aarch64-toolchain.tar.bz2 -C ./jsapi/toolchains
+
+      - name: Build native libjsapi_tsctl.so
+        run: |
+          export CROSS_TOOLCHAIN_PREFIX=$(find $(pwd)/jsapi/toolchains -path '*/bin/*buildroot*gcc' | head -n 1 | sed 's/gcc$//')
+          echo "CROSS_TOOLCHAIN_PREFIX=$CROSS_TOOLCHAIN_PREFIX"
+          cmake -S jsapi -B jsapi/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build jsapi/build --parallel 2
+          cp jsapi/build/libjsapi_tsctl.so ui/libs/ 2>/dev/null || mkdir -p ui/libs && cp jsapi/build/libjsapi_tsctl.so ui/libs/
+          file ui/libs/libjsapi_tsctl.so
+          readelf -h ui/libs/libjsapi_tsctl.so | grep -E "Class|Machine"
+          nm -D ui/libs/libjsapi_tsctl.so | grep custom_init_jsapis
+
+      - name: Package UI (aiot-vue-cli)
+        run: |
+          cd ui
+          pnpm install --no-frozen-lockfile 2>/dev/null || npm install
+          npm run build:prod
+          cd ..
+          find . -type f -iname '*.amr'
+
+      - name: Upload AMR artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ts-manager-x3s-amr
+          path: './ui/*.amr'
+          if-no-files-found: ignore
+          retention-days: 7

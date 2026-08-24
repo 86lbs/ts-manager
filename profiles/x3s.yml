@@ -1,0 +1,51 @@
+# 有道词典笔 X3S 设备 Profile（2026-08-24 实测）
+
+profile_id: youdao-x3s-aarch64-glibc229
+model: "有道词典笔 X3S (SKU: OVERHEAD_X3S_SKU_CHN_STD)"
+firmware: "Linux 4.19.161 #2 SMP Tue Nov 5 17:33:41 CST 2024 aarch64"
+runtime:
+  falcon: "/usr/bin/miniapp (PID 899, UID 0=root)"
+  quickjs: "20200705, 64-bit"
+  api: "miniapp_cli (install/start/uninstall/capture...)"
+abi:
+  machine: "aarch64 (rockchip,rk3566)"
+  bits: 64
+  libc: "glibc 2.29 (/lib/ld-2.29.so)"
+  loader: "/lib/ld-linux-aarch64.so.1"
+  toolchain: "aarch64-buildroot-linux-gnu- (Buildroot 2018.08.1, GCC 7.3.0, glibc 2.27)"
+  libstdcpp: "设备 GLIBCXX_3.4.28 / 工具链 GLIBCXX_3.4.24"
+screen:
+  logical: { width: 480, height: 800 }
+  physical: { width: 480, height: 800, direction: 0, xoffset: 0, yoffset: 0 }
+  drm: "card0-DSI-1, mode 480x800"
+  touch: { direction: 0, xoffset: 0, yoffset: 0 }
+input_method: { version: "unverified", global_text_edit: untested, textarea_soft_input: untested }
+media: { gstreamer: "unverified", decoder: "unverified", kms_driver: "unverified", connector: "DSI-1", crtc: null, plane: null }
+package:
+  appid: "8001999999999999 (placeholder)"
+  version: "0.1.0"
+  start_page: "index"
+  install_layout: "/userdisk/miniapp/data/mini_app/pkg/<appid>/a/"
+  manifest: "{appName, version, appid, quickjs, cert{md5}}"
+  native_lib: "libs/libjsapi_<plugin>_<id>.so (设备安装后展平重命名)"
+tailscale:
+  installed: true
+  version: "1.98.3"
+  base: "/userdisk/tailscale"
+  socket: "/userdisk/tailscale/tailscaled.sock"
+  state: "/userdisk/tailscale/tailscaled.state"
+  start_script: "/userdisk/tailscale/start_tailscale.sh"
+  autostart: "/etc/init.d/S99tailscale (已存在, 用户 root 可写)"
+  bridge: "/userdisk/tailscale/bridge (127.0.0.1:18888)"
+  network: "tailscale userspace-networking + socks5-server=localhost:1055"
+  node: "ydpen-185.tailbc12c3.ts.net, IP 100.79.182.85"
+pstore:
+  device_key: "/userdata/pstore/.device_key (已存在)"
+  sku: "OVERHEAD_X3S_SKU_CHN_STD"
+validation:
+  tested_at: "2026-08-24"
+  evidence:
+    - "SSH root@100.79.182.85 (Tailscale 网内)"
+    - "miniapp 进程 UID=0 → native 可写 /etc/init.d、可 exec"
+    - "已装 PenTool (f553fa3d2452824b) 验证 native JSAPI popen/PTY 可用"
+    - "已装 CloudBrowser 的 .so 要求 GLIBC_2.34 > 设备 2.29 → 该 app 的 native 可能失效（警示）"

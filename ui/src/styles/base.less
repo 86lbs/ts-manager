@@ -1,0 +1,7 @@
+// 全局 less 入口。每个页面 <style> 里 @import "base.less"; 即可。
+@import "var.less";
+
+// 公共 mixin 示例
+.bg-linear-gradient(@from, @to) {
+  background-image: linear-gradient(to bottom, @from, @to);
+}

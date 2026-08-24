@@ -1,0 +1,18 @@
+# build artifacts
+jsapi/build/
+jsapi/toolchains/
+ui/libs/
+**/*.amr
+dist/
+
+# node
+**/node_modules/
+
+# editor
+.vscode/
+.idea/
+*.swp
+
+# device keys / secrets (never commit)
+**/*.pem
+**/*.key
