@@ -39,6 +39,7 @@ jobs:
 
       - name: Package UI (aiot-vue-cli)
         run: |
+          npm install -g pnpm@10.12.4
           cd ui
           pnpm install --no-frozen-lockfile
           # aiot-vue-cli 默认 Vue2，打补丁切换 Vue3 编译器（PenTool 验证过的方案）
