@@ -65,7 +65,9 @@ export default {
     }
   },
   methods: {
-    onShow() {},
+    onShow() {
+      this.loadSettings()
+    },
     onUnload() {},
     loadSettings() {
       this.statusText = '加载中…'
