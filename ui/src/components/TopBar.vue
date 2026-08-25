@@ -47,7 +47,7 @@ export default {
 }
 
 .back-icon {
-  font-size: 56px;
+  font-size: 52px;
   color: @primary;
   font-weight: bold;
   line-height: 56px;
@@ -56,13 +56,13 @@ export default {
 
 .page-title {
   flex: 1;
-  font-size: 32px;
+  font-size: 28px;
   color: @text-color;
   font-weight: bold;
 }
 
 .status-tip {
-  font-size: 20px;
+  font-size: 18px;
   color: @text-secondary;
 }
 

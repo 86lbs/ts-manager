@@ -121,18 +121,18 @@ export default {
 .page { flex-direction: column; padding: 20px; background-color: @background-color; }
 
 .card { flex-direction: column; padding: 16px; border-radius: @radius-medium; background-color: @card-background-color; margin-bottom: 16px; }
-.card-title { font-size: 28px; color: @text-color; margin-bottom: 8px; }
-.desc { font-size: 22px; color: @text-secondary; margin-bottom: 12px; lines: 2; }
+.card-title { font-size: 26px; color: @text-color; margin-bottom: 8px; }
+.desc { font-size: 20px; color: @text-secondary; margin-bottom: 12px; lines: 2; }
 
 .row { flex-direction: row; justify-content: space-between; padding: 6px 0; }
-.label { font-size: 24px; color: @text-secondary; }
-.value { font-size: 24px; color: @text-color; }
+.label { font-size: 22px; color: @text-secondary; }
+.value { font-size: 22px; color: @text-color; }
 .value.ok { color: #2ecc71; }
 .value.bad { color: #e74c3c; }
 
 .btn { flex-direction: row; align-items: center; justify-content: center; height: 64px; border-radius: @radius-medium; background-color: @card-background-color; margin-bottom: 12px; }
 .btn.primary { background-color: @primary; }
-.btn-label { color: #ffffff; font-size: 28px; }
+.btn-label { color: #ffffff; font-size: 26px; }
 .btn:active { opacity: 0.6; }
 
 .log { font-size: 18px; color: #2ecc71; font-family: monospace; lines: 20; }

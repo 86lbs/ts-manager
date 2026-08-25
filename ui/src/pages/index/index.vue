@@ -205,13 +205,13 @@ export default {
 
 .app-title {
   flex: 1;
-  font-size: 30px;
+  font-size: 28px;
   color: @text-color;
   font-weight: bold;
 }
 
 .status-tip {
-  font-size: 22px;
+  font-size: 20px;
   color: @text-secondary;
 }
 .status-tip.ok { color: #2ecc71; }
@@ -233,16 +233,16 @@ export default {
 }
 
 .stat-label {
-  font-size: 18px;
+  font-size: 16px;
   color: @text-secondary;
 }
 
 .stat-value {
-  font-size: 22px;
+  font-size: 20px;
   color: @text-color;
 }
 
-.stat-value.mono { font-size: 20px; }
+.stat-value.mono { font-size: 18px; }
 
 .actions {
   flex-direction: row;
@@ -270,7 +270,7 @@ export default {
 .btn.primary { background-color: @primary; }
 .btn.up { background-color: #27ae60; }
 .btn.down { background-color: #c0392b; }
-.btn-label { color: #ffffff; font-size: 24px; }
+.btn-label { color: #ffffff; font-size: 22px; }
 .btn:active { opacity: 0.6; }
 
 .confirm-modal {
@@ -289,14 +289,14 @@ export default {
 }
 
 .confirm-title {
-  font-size: 30px;
+  font-size: 28px;
   color: #ffffff;
   font-weight: bold;
   margin-bottom: 12px;
 }
 
 .confirm-desc {
-  font-size: 22px;
+  font-size: 20px;
   color: #888888;
   lines: 3;
   margin-bottom: 16px;
