@@ -3,16 +3,44 @@
     <div class="page">
       <text class="page-title">Tailscale 设置</text>
 
-      <!-- Bridge 配置 -->
+      <!-- Bridge 配置：节点列表选择 -->
       <div class="card">
-        <text class="card-title">Bridge 桥接器</text>
-        <text class="desc">HTTP 代理转发到 Tailscale 节点（127.0.0.1:18888 → TARGET:PORT）</text>
-        <div class="input-row">
-          <text class="label">TARGET:</text>
-          <input class="input" ref="bridgeInput" type="text" v-model="bridgeTarget" placeholder="100.x.x.x" />
+        <text class="card-title">Bridge 目标</text>
+        <text class="desc">选一个节点作为桥接目标（127.0.0.1:18888 → 目标IP）</text>
+
+        <div class="current-row">
+          <text class="label">当前:</text>
+          <text class="value" :class="bridgeTarget ? 'ok' : 'bad'">{{ bridgeTarget || '未设置' }}</text>
         </div>
-        <div class="btn primary" @click="saveBridge">
-          <text class="btn-label">保存 Bridge 配置</text>
+
+        <text class="list-title">在线节点</text>
+        <div class="node-list">
+          <div
+            v-for="(peer, idx) in onlinePeers"
+            :key="'o' + idx"
+            class="node-item"
+            :class="{ selected: peer.ip === bridgeTarget }"
+            @click="selectPeer(peer)"
+          >
+            <text class="node-name" :class="peer.ip === bridgeTarget ? 'selected' : ''">{{ peer.name }}</text>
+            <text class="node-ip">{{ peer.ip }}</text>
+          </div>
+          <text class="empty" v-if="!onlinePeers.length">无在线节点</text>
+        </div>
+
+        <text class="list-title">离线节点</text>
+        <div class="node-list">
+          <div
+            v-for="(peer, idx) in offlinePeers"
+            :key="'x' + idx"
+            class="node-item"
+            :class="{ selected: peer.ip === bridgeTarget }"
+            @click="selectPeer(peer)"
+          >
+            <text class="node-name" :class="peer.ip === bridgeTarget ? 'selected' : ''">{{ peer.name }}</text>
+            <text class="node-ip">{{ peer.ip }}</text>
+          </div>
+          <text class="empty" v-if="!offlinePeers.length">无离线节点</text>
         </div>
       </div>
 
@@ -41,7 +69,7 @@
       <text class="hint">{{ statusText }}</text>
 
       <div class="btn" @click="loadSettings">
-        <text class="btn-label">加载设置</text>
+        <text class="btn-label">重新加载</text>
       </div>
       <div class="btn" @click="goBack">
         <text class="btn-label">返回首页</text>
@@ -62,6 +90,9 @@ export default {
       autoStart: false,
       version: '—',
       statusText: '',
+      onlinePeers: [],
+      offlinePeers: [],
+      loadingPeers: false,
     }
   },
   methods: {
@@ -69,7 +100,7 @@ export default {
       this.loadSettings()
     },
     onUnload() {},
-    loadSettings() {
+    async loadSettings() {
       this.statusText = '加载中…'
       try {
         this.version = TsCtl.getVersion() || '—'
@@ -79,23 +110,57 @@ export default {
           const m = cfg.match(/^TARGET=(.+)$/m)
           this.bridgeTarget = m ? m[1].trim() : ''
         }
+        // 加载节点列表
+        await this.loadPeers()
         this.statusText = '已加载'
       } catch (e) {
         this.statusText = '加载失败: ' + String(e)
       }
     },
+    async loadPeers() {
+      if (this.loadingPeers) return
+      this.loadingPeers = true
+      try {
+        const raw = await TsCtl.runTailscale('status --json')
+        const online = []
+        const offline = []
+        if (raw) {
+          const j = JSON.parse(raw)
+          const peers = j.Peer || {}
+          Object.keys(peers).forEach((key) => {
+            const p = peers[key]
+            const ips = p.TailscaleIPs || []
+            if (!ips.length) return
+            const name = p.HostName || key.substring(0, 12)
+            const entry = { name, ip: ips[0], online: !!p.Online }
+            if (p.Online) online.push(entry)
+            else offline.push(entry)
+          })
+          online.sort((a, b) => a.name.localeCompare(b.name))
+          offline.sort((a, b) => a.name.localeCompare(b.name))
+        }
+        this.onlinePeers = online
+        this.offlinePeers = offline
+      } catch (e) {
+        this.onlinePeers = []
+        this.offlinePeers = []
+      } finally {
+        this.loadingPeers = false
+      }
+    },
+    async selectPeer(peer) {
+      this.bridgeTarget = peer.ip
+      this.statusText = '保存 ' + peer.name + ' (' + peer.ip + ')…'
+      try {
+        const content = 'TARGET=' + peer.ip + '\n'
+        const ok = await TsCtl.writeConfigFile('bridge.conf', content)
+        this.statusText = ok ? '已设为 ' + peer.name : '保存失败'
+      } catch (e) {
+        this.statusText = '错误: ' + String(e)
+      }
+    },
     goBack() {
       this.$falcon.navTo('index', {})
-    },
-    async saveBridge() {
-      this.statusText = '保存中…'
-      try {
-        const content = 'TARGET=' + (this.bridgeTarget || '').trim() + '\n'
-        const ok = await TsCtl.writeConfigFile('bridge.conf', content)
-        this.statusText = ok ? '已保存' : '保存失败'
-      } catch (e) {
-        this.statusText = '错误: ' + (e && e.message ? e.message : String(e))
-      }
     },
     toggleAutostart() {
       try {
@@ -127,13 +192,32 @@ export default {
 .card-title { font-size: 28px; color: @text-color; margin-bottom: 8px; }
 .desc { font-size: 22px; color: @text-secondary; margin-bottom: 12px; lines: 2; }
 
+.current-row { flex-direction: row; justify-content: space-between; padding: 6px 0; margin-bottom: 8px; }
+.current-row .label { font-size: 24px; color: @text-secondary; }
+.current-row .value { font-size: 24px; color: @text-color; }
+.current-row .value.ok { color: #2ecc71; }
+.current-row .value.bad { color: #e74c3c; }
+
+.list-title { font-size: 22px; color: @text-secondary; margin: 8px 0 6px 0; }
+.node-list { flex-direction: column; }
+.node-item {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+}
+.node-item:active { background-color: #3a3a3a; }
+.node-item.selected { background-color: rgba(16, 142, 233, 0.3); }
+.node-name { font-size: 24px; color: @text-color; }
+.node-name.selected { color: @primary; }
+.node-ip { font-size: 20px; color: @text-secondary; }
+.empty { font-size: 22px; color: @text-secondary; padding: 8px 0; }
+
 .row { flex-direction: row; justify-content: space-between; padding: 6px 0; }
 .row .label { font-size: 24px; color: @text-secondary; }
 .row .value { font-size: 24px; color: @text-color; }
-
-.input-row { flex-direction: row; align-items: center; margin-bottom: 12px; }
-.input-row .label { font-size: 22px; color: @text-secondary; margin-right: 8px; }
-.input { flex: 1; height: 56px; padding: 0 12px; border-radius: 6px; background-color: #1a1a1a; color: #ffffff; font-size: 20px; }
 
 .btn { flex-direction: row; align-items: center; justify-content: center; height: 64px; border-radius: @radius-medium; background-color: @card-background-color; margin-bottom: 12px; }
 .btn.primary { background-color: @primary; }
