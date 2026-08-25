@@ -1,58 +1,71 @@
 <template>
-  <scroller class="scroller">
+  <scroller class="scroller" direction="horizontal">
     <div class="page">
-      <text class="app-title">Tailscale Manager</text>
+      <!-- 顶部标题 + 状态 -->
+      <div class="topbar">
+        <text class="app-title">Tailscale</text>
+        <text class="conn" :class="up ? 'ok' : 'bad'">{{ up ? '已连接' : (daemonRunning ? '未认证' : '离线') }}</text>
+      </div>
 
-      <div class="card">
-        <div class="row">
-          <text class="label">运行状态</text>
-          <text class="value" :class="daemonRunning ? 'ok' : 'bad'">
-            {{ daemonRunning ? '运行中' : '未运行' }}
-          </text>
+      <!-- 状态行：一行横排 -->
+      <div class="status-row">
+        <div class="stat">
+          <text class="stat-label">IP</text>
+          <text class="stat-value mono">{{ selfIp }}</text>
         </div>
-        <div class="row">
-          <text class="label">网络状态</text>
-          <text class="value" :class="up ? 'ok' : 'bad'">
-            {{ up ? '已连接' : '已断开' }}
-          </text>
+        <div class="stat">
+          <text class="stat-label">版本</text>
+          <text class="stat-value">{{ version }}</text>
         </div>
-        <div class="row">
-          <text class="label">版本</text>
-          <text class="value">{{ version }}</text>
-        </div>
-        <div class="row">
-          <text class="label">本机 IP</text>
-          <text class="value mono">{{ selfIp }}</text>
-        </div>
-        <div class="row">
-          <text class="label">主机名</text>
-          <text class="value">{{ selfName }}</text>
+        <div class="stat">
+          <text class="stat-label">主机</text>
+          <text class="stat-value">{{ selfName }}</text>
         </div>
       </div>
 
-      <div class="btn primary" @click="refresh">
-        <text class="btn-label">刷新状态</text>
-      </div>
-      <div class="btn up" @click="doUp">
-        <text class="btn-label">上线 (up)</text>
-      </div>
-      <div class="btn down" @click="doDown">
-        <text class="btn-label">断开 (down)</text>
+      <!-- 操作按钮：横排 -->
+      <div class="actions">
+        <div class="btn up" @click="doUp">
+          <text class="btn-label">上线</text>
+        </div>
+        <div class="btn down" @click="confirmDown">
+          <text class="btn-label">断开</text>
+        </div>
+        <div class="btn primary" @click="refresh">
+          <text class="btn-label">刷新</text>
+        </div>
       </div>
 
-      <div class="divider"></div>
-
-      <div class="btn" @click="goInstall">
-        <text class="btn-label">安装 / 更新</text>
-      </div>
-      <div class="btn" @click="goAuth">
-        <text class="btn-label">认证设置</text>
-      </div>
-      <div class="btn" @click="goSettings">
-        <text class="btn-label">系统设置</text>
+      <!-- 导航：横排 -->
+      <div class="navs">
+        <div class="btn" @click="goInstall">
+          <text class="btn-label">安装</text>
+        </div>
+        <div class="btn" @click="goAuth">
+          <text class="btn-label">认证</text>
+        </div>
+        <div class="btn" @click="goSettings">
+          <text class="btn-label">设置</text>
+        </div>
       </div>
 
       <text class="hint">{{ statusText }}</text>
+
+      <!-- 断开确认弹窗 -->
+      <modal class="confirm-modal" v-if="showConfirm" floating="true" focusable="true">
+        <div class="confirm-box">
+          <text class="confirm-title">确认断开？</text>
+          <text class="confirm-desc">断开后远程 SSH 将不可用，只能通过 USB/ADB 或本机操作重新连接。</text>
+          <div class="confirm-actions">
+            <div class="btn down" @click="doDown">
+              <text class="btn-label">确认断开</text>
+            </div>
+            <div class="btn" @click="showConfirm = false">
+              <text class="btn-label">取消</text>
+            </div>
+          </div>
+        </div>
+      </modal>
     </div>
   </scroller>
 </template>
@@ -72,17 +85,11 @@ export default {
       up: false,
       statusText: '',
       refreshing: false,
+      showConfirm: false,
     }
   },
   methods: {
     onShow() {
-      // 诊断：测试 popen 在同步线程是否工作，结果放状态栏
-      try {
-        const test = TsCtl.testPopen()
-        this.statusText = 'popen: ' + test
-      } catch(e) {
-        this.statusText = 'popen err: ' + String(e)
-      }
       this.refresh()
     },
     onUnload() {},
@@ -128,7 +135,11 @@ export default {
         this.statusText = '错误: ' + (e && e.message ? e.message : String(e))
       }
     },
+    confirmDown() {
+      this.showConfirm = true
+    },
     async doDown() {
+      this.showConfirm = false
       this.statusText = '断开中…'
       try {
         const output = await TsCtl.runTailscale('down')
@@ -157,91 +168,130 @@ export default {
 .scroller {
   width: 750rpx;
   height: 100%;
+  flex-direction: column;
 }
 
 .page {
   flex-direction: column;
-  padding: 20px;
+  padding: 12px;
   background-color: @background-color;
 }
 
+.topbar {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0 8px 0;
+}
+
 .app-title {
-  font-size: 36px;
+  font-size: 30px;
   color: @text-color;
   font-weight: bold;
-  margin-bottom: 16px;
 }
 
-.card {
-  flex-direction: column;
-  padding: 16px;
-  border-radius: @radius-medium;
-  background-color: @card-background-color;
-  margin-bottom: 16px;
-}
-
-.row {
-  flex-direction: row;
-  justify-content: space-between;
-  padding: 6px 0;
-}
-
-.label {
+.conn {
   font-size: 24px;
   color: @text-secondary;
 }
+.conn.ok { color: #2ecc71; }
+.conn.bad { color: #e74c3c; }
 
-.value {
-  font-size: 24px;
+.status-row {
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 8px;
+  border-radius: @radius-medium;
+  background-color: @card-background-color;
+  margin-bottom: 8px;
+}
+
+.stat {
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-label {
+  font-size: 18px;
+  color: @text-secondary;
+}
+
+.stat-value {
+  font-size: 22px;
   color: @text-color;
 }
 
-.value.ok { color: #2ecc71; }
-.value.bad { color: #e74c3c; }
-.value.mono { font-size: 22px; }
+.stat-value.mono { font-size: 20px; }
+
+.actions {
+  flex-direction: row;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.navs {
+  flex-direction: row;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
 
 .btn {
+  flex: 1;
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  height: 64px;
+  height: 56px;
   border-radius: @radius-medium;
   background-color: @card-background-color;
-  margin-bottom: 12px;
+  margin-right: 8px;
 }
-
-.btn-label {
-  color: #ffffff;
-  font-size: 28px;
-}
-
-.btn.primary {
-  background-color: @primary;
-}
-
-.btn.up {
-  background-color: #27ae60;
-}
-
-.btn.down {
-  background-color: #c0392b;
-}
-
-.btn:active {
-  opacity: 0.6;
-}
+.btn:last-child { margin-right: 0; }
+.btn.primary { background-color: @primary; }
+.btn.up { background-color: #27ae60; }
+.btn.down { background-color: #c0392b; }
+.btn-label { color: #ffffff; font-size: 24px; }
+.btn:active { opacity: 0.6; }
 
 .hint {
-  font-size: 20px;
+  font-size: 18px;
   color: @text-secondary;
   text-align: center;
-  margin-top: 8px;
+  margin-top: 4px;
   lines: 2;
 }
 
-.divider {
-  height: 1px;
-  background-color: #333333;
-  margin: 8px 0 16px 0;
+.confirm-modal {
+  width: 750rpx;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.confirm-box {
+  flex-direction: column;
+  padding: 24px;
+  border-radius: 12px;
+  background-color: #2a2a2a;
+  width: 620rpx;
+}
+
+.confirm-title {
+  font-size: 30px;
+  color: #ffffff;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+
+.confirm-desc {
+  font-size: 22px;
+  color: #888888;
+  lines: 3;
+  margin-bottom: 16px;
+}
+
+.confirm-actions {
+  flex-direction: row;
+  justify-content: space-between;
 }
 </style>
