@@ -291,7 +291,6 @@ bool TsCtl::getAuthUrl(std::string &authUrl) const
     execCmd("pkill -f 'tailscale.*up --json' 2>/dev/null || true", rc);
 
     // 后台启动 tailscale up --json，输出到文件
-    int rc;
     execCmd(
         "nohup " + std::string(kTailscaleCli) +
         " --socket=" + kSocket +
