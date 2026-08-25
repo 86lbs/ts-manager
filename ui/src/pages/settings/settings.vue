@@ -48,8 +48,8 @@
       <div class="card">
         <text class="card-title">开机自启</text>
         <div class="row">
-          <text class="label">设备启动时自动连接</text>
-          <text class="value" :class="autoStart ? 'ok' : 'bad'">{{ autoStart ? '已启用' : '已禁用' }}</text>
+          <text class="row-label">设备启动时自动连接</text>
+          <text class="row-value" :class="autoStart ? 'ok' : 'bad'">{{ autoStart ? '已启用' : '已禁用' }}</text>
         </div>
       </div>
 
@@ -205,8 +205,10 @@ export default {
 .empty { font-size: 22px; color: @text-secondary; padding: 8px 0; }
 
 .row { flex-direction: row; justify-content: space-between; padding: 6px 0; }
-.row .label { font-size: 24px; color: @text-secondary; }
-.row .value { font-size: 24px; color: @text-color; }
+.row-label { font-size: 24px; color: @text-secondary; }
+.row-value { font-size: 24px; color: @text-color; }
+.row-value.ok { color: #2ecc71; }
+.row-value.bad { color: #e74c3c; }
 
 .btn { flex-direction: row; align-items: center; justify-content: center; height: 64px; border-radius: @radius-medium; background-color: @card-background-color; margin-bottom: 12px; }
 .btn.primary { background-color: @primary; }

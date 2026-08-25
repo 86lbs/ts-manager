@@ -16,24 +16,6 @@
         <text class="val" v-if="authUrl && !loading">{{ authUrl }}</text>
         <text class="val warn" v-if="authUrl && !loading && qrFailed">（二维码未渲染，请复制上方链接到手机浏览器打开）</text>
       </div>
-
-      <!-- Auth Key 输入（默认折叠，高级选项） -->
-      <div class="card">
-        <div class="adv-toggle" @click="showAuthKey = !showAuthKey">
-          <text class="card-title">Auth Key 认证</text>
-          <text class="adv-hint">{{ showAuthKey ? '收起 ▲' : '展开 ▼' }}</text>
-        </div>
-        <div v-if="showAuthKey">
-          <text class="desc">输入 Tailscale 控制台生成的预认证密钥（无手机扫码时使用）</text>
-          <div class="input-row">
-            <text class="label">Auth Key:</text>
-            <input class="input" ref="authKeyInput" type="text" v-model="authKey" placeholder="tskey-auth-..." />
-          </div>
-          <div class="btn primary" @click="doAuthKey">
-            <text class="btn-label">{{ loading ? '连接中…' : '认证并连接' }}</text>
-          </div>
-        </div>
-      </div>
     </div>
   </scroller>
 </template>
@@ -49,8 +31,6 @@ export default {
   data() {
     return {
       authUrl: '',
-      authKey: '',
-      showAuthKey: false,
       loading: false,
       qrFailed: false,
       statusText: '',
@@ -102,24 +82,6 @@ export default {
         this.loading = false
       }
     },
-    async doAuthKey() {
-      const key = (this.authKey || '').trim()
-      if (!key) {
-        this.statusText = '请输入 Auth Key'
-        return
-      }
-      this.loading = true
-      this.statusText = '连接中…'
-      try {
-        const raw = await TsCtl.runTailscale('up --auth-key="' + key + '" --accept-routes')
-        this.statusText = raw ? '认证成功: ' + raw.substring(0, 80) : '认证成功（无输出）'
-        this.authKey = ''
-      } catch (e) {
-        this.statusText = '错误: ' + (e && e.message ? e.message : String(e))
-      } finally {
-        this.loading = false
-      }
-    },
   },
 }
 </script>
@@ -134,18 +96,11 @@ export default {
 .card-title { font-size: 28px; color: @text-color; margin-bottom: 8px; }
 .desc { font-size: 22px; color: @text-secondary; margin-bottom: 12px; lines: 2; }
 
-.adv-toggle { flex-direction: row; align-items: center; justify-content: space-between; }
-.adv-hint { font-size: 20px; color: @text-secondary; }
-
 .qrcode-wrap { align-items: center; justify-content: center; padding: 16px; }
 .qrcode { width: 200px; height: 200px; }
 
 .val { font-size: 18px; color: @text-secondary; margin-top: 8px; lines: 3; }
 .val.warn { color: #f39c12; }
-
-.input-row { flex-direction: row; align-items: center; margin-bottom: 12px; }
-.input-row .label { font-size: 22px; color: @text-secondary; margin-right: 8px; }
-.input { flex: 1; height: 56px; padding: 0 12px; border-radius: 6px; background-color: #1a1a1a; color: #ffffff; font-size: 20px; }
 
 .btn { flex-direction: row; align-items: center; justify-content: center; height: 64px; border-radius: @radius-medium; background-color: @card-background-color; margin-bottom: 12px; }
 .btn.primary { background-color: @primary; }

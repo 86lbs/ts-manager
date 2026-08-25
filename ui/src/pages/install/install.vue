@@ -130,10 +130,6 @@ export default {
 .value.ok { color: #2ecc71; }
 .value.bad { color: #e74c3c; }
 
-.input-row { flex-direction: row; align-items: center; margin-bottom: 12px; }
-.input-row .label { font-size: 22px; color: @text-secondary; margin-right: 8px; }
-.input { flex: 1; height: 56px; padding: 0 12px; border-radius: 6px; background-color: #1a1a1a; color: #ffffff; font-size: 20px; }
-
 .btn { flex-direction: row; align-items: center; justify-content: center; height: 64px; border-radius: @radius-medium; background-color: @card-background-color; margin-bottom: 12px; }
 .btn.primary { background-color: @primary; }
 .btn-label { color: #ffffff; font-size: 28px; }
