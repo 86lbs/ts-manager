@@ -1,7 +1,7 @@
 {
   "name": "ts-manager",
   "appid": "800186lbstsmanage",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Tailscale Manager - 有道词典笔 Tailscale 管理软件",
   "icon": "app_icon.png",
   "quickjs": {
