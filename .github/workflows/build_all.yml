@@ -1,0 +1,97 @@
+name: Build ts-manager for all models
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: aarch64-glibc
+            model: x3s-y02-x7-p5
+            toolchain_url: https://github.com/penosext/Cloudpan/releases/download/toolchains/aarch64--glibc--stable-2018.11-1.tar.bz2
+            amr_name: ts-manager-aarch64-glibc
+          - name: armv7-glibc
+            model: s6p
+            toolchain_url: https://github.com/penosext/Cloudpan/releases/download/toolchains/armv7-eabihf--glibc--stable-2018.11-1.tar.bz2
+            amr_name: ts-manager-armv7-glibc
+          - name: arm-gnueabihf
+            model: x5
+            toolchain_url: https://github.com/penosext/Cloudpan/releases/download/toolchains/arm-unknown-linux-gnueabihf.tar.xz
+            amr_name: ts-manager-arm-gnueabihf
+          - name: armv7-uclibc
+            model: a6p
+            toolchain_url: https://github.com/penosext/Cloudpan/releases/download/toolchains/armv7-eabihf--uclibc--bleeding-edge-2018.11-1.tar.bz2
+            amr_name: ts-manager-armv7-uclibc
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: ''
+
+      - name: Install toolchain
+        run: |
+          mkdir -p jsapi/toolchains
+          wget -q "${{ matrix.toolchain_url }}" -O ./jsapi/toolchains/tc
+          # 判断压缩格式（bz2 或 xz）
+          if file ./jsapi/toolchains/tc | grep -qi "XZ"; then
+            tar -xJf ./jsapi/toolchains/tc -C ./jsapi/toolchains
+          elif file ./jsapi/toolchains/tc | grep -qi "bzip"; then
+            tar -xjf ./jsapi/toolchains/tc -C ./jsapi/toolchains
+          else
+            tar -xf ./jsapi/toolchains/tc -C ./jsapi/toolchains
+          fi
+          find jsapi/toolchains -path '*/bin/*gcc' | head -3
+
+      - name: Build native libjsapi_tsctl.so
+        run: |
+          GCC=$(find $(pwd)/jsapi/toolchains -path '*/bin/*gcc' ! -name '*gcc-*' | head -1)
+          if [ -z "$GCC" ]; then
+            GCC=$(find $(pwd)/jsapi/toolchains -path '*/bin/*gcc' | head -1)
+          fi
+          echo "GCC=$GCC"
+          export CROSS_TOOLCHAIN_PREFIX=$(dirname "$GCC")/
+          echo "PREFIX=$CROSS_TOOLCHAIN_PREFIX"
+          cmake -S jsapi -B jsapi/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build jsapi/build --parallel 2
+          file jsapi/build/libjsapi_tsctl.so
+          readelf -h jsapi/build/libjsapi_tsctl.so | grep -E "Class|Machine"
+          nm -D jsapi/build/libjsapi_tsctl.so | grep custom_init_jsapis
+          mkdir -p ui/libs
+          cp jsapi/build/libjsapi_tsctl.so ui/libs/
+
+      - name: Package UI (aiot-vue-cli)
+        run: |
+          npm install -g pnpm@10.12.4
+          cd ui
+          pnpm install --no-frozen-lockfile
+          sed -i "s/commonjs(),/commonjs(),require('@rollup\/plugin-typescript')(),/g" ./node_modules/aiot-vue-cli/src/libs/rollup.config.js
+          sed -i "s/compiler.parseComponent(content, { pad: 'line' })/compiler.parse(content, { pad: 'line' }).descriptor/g" ./node_modules/aiot-vue-cli/web-loaders/falcon-vue-loader/lib/parser.js
+          sed -i "s/path.resolve(__dirname, '.\/vue\/packages\/vue-template-compiler\/index.js')/'@vue\/compiler-sfc'/g" ./node_modules/aiot-vue-cli/cli-libs/index.js
+          sed -i "s/compiler.parseComponent(content, { pad: true })/compiler.parse(content, { pad: true }).descriptor/g" ./node_modules/aiot-vue-cli/src/libs/parser.js
+          sed -i "s/compiler.compile/compiler.compileTemplate/g" ./node_modules/aiot-vue-cli/web-loaders/falcon-vue-loader/lib/template-compiler/index.js
+          sed -i "s/const replaceValues = {}/const replaceValues = { 'defineComponent': '' }/g" ./node_modules/aiot-vue-cli/src/libs/rollup.config.js
+          npm run build:prod
+          cd ..
+          find . -type f -iname '*.amr'
+
+      - name: Inject PStore props & repackage
+        run: |
+          python3 .github/scripts/inject-props.py 800186lbstsmanage ui
+          find ui -iname '*.amr'
+
+      - name: Upload AMR artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.amr_name }}
+          path: './ui/*.amr'
+          if-no-files-found: error
+          retention-days: 7
