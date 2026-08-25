@@ -1,10 +1,11 @@
 <template>
   <scroller class="scroller" direction="horizontal">
     <div class="page">
-      <!-- 顶部标题 + 状态 -->
+      <!-- 顶部标题 + 状态提示 -->
       <div class="topbar">
         <text class="app-title">Tailscale</text>
         <text class="conn" :class="up ? 'ok' : 'bad'">{{ up ? '已连接' : (daemonRunning ? '未认证' : '离线') }}</text>
+        <text class="status-tip" :class="tipClass">{{ statusText }}</text>
       </div>
 
       <!-- 状态行：一行横排 -->
@@ -31,9 +32,6 @@
         <div class="btn down" @click="confirmDown">
           <text class="btn-label">断开</text>
         </div>
-        <div class="btn primary" @click="refresh">
-          <text class="btn-label">刷新</text>
-        </div>
       </div>
 
       <!-- 导航：横排 -->
@@ -48,8 +46,6 @@
           <text class="btn-label">设置</text>
         </div>
       </div>
-
-      <text class="hint">{{ statusText }}</text>
 
       <!-- 断开确认弹窗 -->
       <modal class="confirm-modal" v-if="showConfirm" floating="true" focusable="true">
@@ -84,19 +80,33 @@ export default {
       selfName: '—',
       up: false,
       statusText: '',
+      tipClass: '',
       refreshing: false,
       showConfirm: false,
+      timerId: 0,
     }
   },
   methods: {
     onShow() {
       this.refresh()
+      // 定时刷新（30 秒）
+      if (!this.timerId) {
+        this.timerId = this.$page.setInterval(() => {
+          this.refresh()
+        }, 30000)
+      }
     },
-    onUnload() {},
+    onUnload() {
+      if (this.timerId) {
+        this.$page.clearInterval(this.timerId)
+        this.timerId = 0
+      }
+    },
     async refresh() {
       if (this.refreshing) return
       this.refreshing = true
       this.statusText = '刷新中…'
+      this.tipClass = ''
       try {
         this.daemonRunning = !!TsCtl.isDaemonRunning()
         this.version = TsCtl.getVersion() || '未安装'
@@ -120,21 +130,26 @@ export default {
         } else {
           this.up = false
         }
-        this.statusText = '已刷新'
+        this.statusText = this.up ? '已连接' : (this.daemonRunning ? '未认证' : '离线')
+        this.tipClass = this.up ? 'ok' : 'bad'
       } catch (e) {
         this.statusText = '错误: ' + (e && e.message ? e.message : String(e))
+        this.tipClass = 'bad'
       } finally {
         this.refreshing = false
       }
     },
     async doUp() {
       this.statusText = '连接中…'
+      this.tipClass = ''
       try {
         const output = await TsCtl.runTailscale('up --accept-routes')
         this.statusText = output ? '上线完成' : '失败: ' + (output || '')
+        this.tipClass = output ? 'ok' : 'bad'
         this.refresh()
       } catch (e) {
         this.statusText = '错误: ' + (e && e.message ? e.message : String(e))
+        this.tipClass = 'bad'
       }
     },
     confirmDown() {
@@ -143,12 +158,15 @@ export default {
     async doDown() {
       this.showConfirm = false
       this.statusText = '断开中…'
+      this.tipClass = ''
       try {
         const output = await TsCtl.runTailscale('down')
-        this.statusText = output ? '断开完成' : '失败: ' + (output || '')
+        this.statusText = output ? '已断开' : '失败: ' + (output || '')
+        this.tipClass = output ? 'bad' : 'bad'
         this.refresh()
       } catch (e) {
         this.statusText = '错误: ' + (e && e.message ? e.message : String(e))
+        this.tipClass = 'bad'
       }
     },
     goInstall() {
@@ -195,9 +213,17 @@ export default {
 .conn {
   font-size: 24px;
   color: @text-secondary;
+  margin-right: 12px;
 }
 .conn.ok { color: #2ecc71; }
 .conn.bad { color: #e74c3c; }
+
+.status-tip {
+  font-size: 20px;
+  color: @text-secondary;
+}
+.status-tip.ok { color: #2ecc71; }
+.status-tip.bad { color: #e74c3c; }
 
 .status-row {
   flex-direction: row;
@@ -254,14 +280,6 @@ export default {
 .btn.down { background-color: #c0392b; }
 .btn-label { color: #ffffff; font-size: 24px; }
 .btn:active { opacity: 0.6; }
-
-.hint {
-  font-size: 18px;
-  color: @text-secondary;
-  text-align: center;
-  margin-top: 4px;
-  lines: 2;
-}
 
 .confirm-modal {
   width: 750rpx;

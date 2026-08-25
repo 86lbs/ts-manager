@@ -1,7 +1,7 @@
 <template>
   <scroller class="scroller">
     <div class="page">
-      <text class="page-title">安装 / 更新</text>
+      <TopBar title="安装 / 更新" :tip="statusText" :tip-class="tipClass" />
 
       <!-- 当前状态 -->
       <div class="card">
@@ -35,7 +35,6 @@
         <div class="btn primary" @click="doInstall">
           <text class="btn-label">{{ installing ? '安装中…' : (installed ? '更新到最新版' : '安装最新版') }}</text>
         </div>
-        <text class="hint">{{ statusText }}</text>
       </div>
 
       <!-- 安装日志 -->
@@ -43,19 +42,17 @@
         <text class="card-title">安装日志</text>
         <text class="log">{{ logText }}</text>
       </div>
-
-      <div class="btn" @click="goBack">
-        <text class="btn-label">返回首页</text>
-      </div>
     </div>
   </scroller>
 </template>
 
 <script>
+import TopBar from '../../components/TopBar.vue'
 import { TsCtl } from 'tsctl'
 
 export default {
   name: 'PageInstall',
+  components: { TopBar },
   props: [],
   data() {
     return {
@@ -65,6 +62,7 @@ export default {
       latestVersion: '',
       installing: false,
       statusText: '',
+      tipClass: '',
       logText: '',
     }
   },
@@ -92,7 +90,6 @@ export default {
         const v = await TsCtl.getLatestVersion()
         if (v) {
           this.latestVersion = v
-          this.targetVersion = v
         }
       } catch (e) {
         this.latestVersion = ''
@@ -123,8 +120,6 @@ export default {
 .scroller { width: 750rpx; height: 100%; }
 .page { flex-direction: column; padding: 20px; background-color: @background-color; }
 
-.page-title { font-size: 36px; color: @text-color; font-weight: bold; margin-bottom: 16px; }
-
 .card { flex-direction: column; padding: 16px; border-radius: @radius-medium; background-color: @card-background-color; margin-bottom: 16px; }
 .card-title { font-size: 28px; color: @text-color; margin-bottom: 8px; }
 .desc { font-size: 22px; color: @text-secondary; margin-bottom: 12px; lines: 2; }
@@ -143,8 +138,6 @@ export default {
 .btn.primary { background-color: @primary; }
 .btn-label { color: #ffffff; font-size: 28px; }
 .btn:active { opacity: 0.6; }
-
-.hint { font-size: 20px; color: @text-secondary; text-align: center; margin-top: 8px; lines: 2; }
 
 .log { font-size: 18px; color: #2ecc71; font-family: monospace; lines: 20; }
 </style>

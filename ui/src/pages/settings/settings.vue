@@ -1,7 +1,7 @@
 <template>
   <scroller class="scroller">
     <div class="page">
-      <text class="page-title">Tailscale 设置</text>
+      <TopBar title="Tailscale 设置" :tip="statusText" :tip-class="statusClass" />
 
       <!-- Bridge 配置：节点列表选择 -->
       <div class="card">
@@ -53,29 +53,27 @@
         </div>
       </div>
 
-      <text class="hint">{{ statusText }}</text>
-
       <div class="btn" @click="loadSettings">
         <text class="btn-label">重新加载</text>
-      </div>
-      <div class="btn" @click="goBack">
-        <text class="btn-label">返回首页</text>
       </div>
     </div>
   </scroller>
 </template>
 
 <script>
+import TopBar from '../../components/TopBar.vue'
 import { TsCtl } from 'tsctl'
 
 export default {
   name: 'PageSettings',
+  components: { TopBar },
   props: [],
   data() {
     return {
       bridgeTarget: '',
       autoStart: false,
       statusText: '',
+      statusClass: '',
       onlinePeers: [],
       offlinePeers: [],
       loadingPeers: false,
@@ -88,6 +86,7 @@ export default {
     onUnload() {},
     async loadSettings() {
       this.statusText = '加载中…'
+      this.statusClass = ''
       try {
         this.autoStart = !!TsCtl.isAutostartEnabled()
         const cfg = TsCtl.readConfigFile('bridge.conf')
@@ -98,8 +97,10 @@ export default {
         // 加载节点列表
         await this.loadPeers()
         this.statusText = '已加载'
+        this.statusClass = 'ok'
       } catch (e) {
         this.statusText = '加载失败: ' + String(e)
+        this.statusClass = 'bad'
       }
     },
     async loadPeers() {
@@ -141,19 +142,27 @@ export default {
         this.loadingPeers = false
       }
     },
+    goBack() {
+      this.$falcon.navTo('index', {})
+    },
     async selectPeer(peer) {
       this.bridgeTarget = peer.ip
       this.statusText = '保存 ' + peer.name + ' (' + peer.ip + ')…'
+      this.statusClass = ''
       try {
         const content = 'TARGET=' + peer.ip + '\n'
         const ok = await TsCtl.writeConfigFile('bridge.conf', content)
-        this.statusText = ok ? '已设为 ' + peer.name : '保存失败'
+        if (ok) {
+          this.statusText = '已设为 ' + peer.name
+          this.statusClass = 'ok'
+        } else {
+          this.statusText = '保存失败'
+          this.statusClass = 'bad'
+        }
       } catch (e) {
         this.statusText = '错误: ' + String(e)
+        this.statusClass = 'bad'
       }
-    },
-    goBack() {
-      this.$falcon.navTo('index', {})
     },
     toggleAutostart() {
       // 只读状态，不做开关（避免误关导致设备重启后失联）
@@ -167,8 +176,6 @@ export default {
 
 .scroller { width: 750rpx; height: 100%; }
 .page { flex-direction: column; padding: 20px; background-color: @background-color; }
-
-.page-title { font-size: 36px; color: @text-color; font-weight: bold; margin-bottom: 16px; }
 
 .card { flex-direction: column; padding: 16px; border-radius: @radius-medium; background-color: @card-background-color; margin-bottom: 16px; }
 .card-title { font-size: 28px; color: @text-color; margin-bottom: 8px; }
@@ -207,6 +214,4 @@ export default {
 .btn.down { background-color: #c0392b; }
 .btn-label { color: #ffffff; font-size: 28px; }
 .btn:active { opacity: 0.6; }
-
-.hint { font-size: 20px; color: @text-secondary; text-align: center; margin-top: 8px; lines: 2; }
 </style>
