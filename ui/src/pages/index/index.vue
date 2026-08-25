@@ -2,9 +2,6 @@
   <div class="app">
     <!-- 左侧导航栏 -->
     <div class="sidebar">
-      <div class="logo">
-        <text class="logo-text">TS</text>
-      </div>
       <div
         v-for="item in navItems"
         :key="item.id"
@@ -428,27 +425,16 @@ export default {
 
 /* 侧边栏 */
 .sidebar {
-  width: 120px;
+  width: 110px;
   flex-direction: column;
   background-color: #222222;
-  padding: 8px 0;
-}
-
-.logo {
-  align-items: center;
-  padding: 4px 0 10px 0;
-}
-
-.logo-text {
-  font-size: 26px;
-  color: @primary;
-  font-weight: bold;
+  padding: 6px 0;
 }
 
 .nav-item {
   align-items: center;
   justify-content: center;
-  padding: 12px 0;
+  padding: 8px 0;
   margin: 2px 8px;
   border-radius: 8px;
 }
@@ -462,7 +448,7 @@ export default {
 }
 
 .nav-label {
-  font-size: 22px;
+  font-size: 20px;
   color: @text-secondary;
 }
 
@@ -484,7 +470,7 @@ export default {
 .nav-item.mini.down { background-color: #c0392b; }
 
 .nav-label.mini {
-  font-size: 20px;
+  font-size: 18px;
   color: #ffffff;
 }
 
