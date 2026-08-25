@@ -110,3 +110,44 @@ std::string TsCtl::testPopen() const
     std::string out = execCmd("echo 'popen_ok' 2>&1", rc);
     return out + "|rc=" + std::to_string(rc);
 }
+
+// ---- autostart ----
+bool TsCtl::isAutostartEnabled() const
+{
+    struct stat st;
+    if (::stat("/etc/init.d/S99tailscale", &st) != 0) return false;
+    return (st.st_mode & S_IFMT) == S_IFREG;
+}
+
+bool TsCtl::setAutostart(bool enable) const
+{
+    const char *path = "/etc/init.d/S99tailscale";
+    if (enable) {
+        if (!fileExists(kStartScript)) return false;
+        std::string content =
+            "#!/bin/sh\n"
+            "# Tailscale 开机自启 - 由 ts-manager 管理\n"
+            "#\n"
+            "BASE=/userdisk/tailscale\n"
+            "SOCKET=$BASE/tailscaled.sock\n"
+            "STATE=$BASE/tailscaled.state\n"
+            "LOG=$BASE/tailscaled.log\n"
+            "\n"
+            "if ! pgrep -x tailscaled >/dev/null 2>&1; then\n"
+            "  unset ALL_PROXY all_proxy HTTP_PROXY http_proxy HTTPS_PROXY https_proxy NO_PROXY no_proxy\n"
+            "  nohup $BASE/tailscaled --state=$STATE --socket=$SOCKET --tun=userspace-networking --socks5-server=localhost:1055 >> $LOG 2>&1 &\n"
+            "  for i in 1 2 3; do\n"
+            "    [ -S \"$SOCKET\" ] && break\n"
+            "    sleep 2\n"
+            "  done\n"
+            "fi\n";
+        std::ofstream out(path, std::ios::trunc);
+        if (!out) return false;
+        out << content;
+        out.flush();
+        if (!out.good()) return false;
+        return ::chmod(path, 0755) == 0;
+    } else {
+        return ::unlink(path) == 0;
+    }
+}

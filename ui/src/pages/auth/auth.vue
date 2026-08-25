@@ -8,12 +8,13 @@
         <text class="card-title">扫码认证</text>
         <text class="desc">点击下方按钮生成登录二维码，用手机 Tailscale 扫码</text>
         <div class="qrcode-wrap" v-if="authUrl">
-          <qrcode class="qrcode" :value="authUrl" level="Q" color="black" />
+          <qrcode ref="qrRef" class="qrcode" :value="authUrl" level="Q" color="black" />
         </div>
         <div class="btn primary" @click="genAuthUrl">
           <text class="btn-label">{{ loading ? '生成中…' : '生成二维码' }}</text>
         </div>
         <text class="val" v-if="authUrl && !loading">{{ authUrl }}</text>
+        <text class="val warn" v-if="authUrl && !loading && qrFailed">（二维码未渲染，请复制上方链接到手机浏览器打开）</text>
       </div>
 
       <!-- Auth Key 输入 -->
@@ -49,6 +50,7 @@ export default {
       authUrl: '',
       authKey: '',
       loading: false,
+      qrFailed: false,
       statusText: '',
     }
   },
@@ -60,6 +62,7 @@ export default {
     },
     async genAuthUrl() {
       this.loading = true
+      this.qrFailed = false
       this.statusText = '请求认证链接…'
       this.authUrl = ''
       try {
@@ -71,8 +74,13 @@ export default {
             if (url) {
               this.authUrl = url
               this.statusText = '请用手机 Tailscale 扫码'
+              // 二维码渲染检测：给组件一点时间
+              setTimeout(() => {
+                // 若 qrcode 组件未生成（value 设置了但没有实际渲染），标记失败
+                const el = this.$refs.qrRef
+                this.qrFailed = !el
+              }, 1000)
             } else {
-              // 可能已认证
               const state = j.BackendState || ''
               if (state === 'Running') {
                 this.statusText = '已在线，无需认证'
@@ -130,6 +138,7 @@ export default {
 .qrcode { width: 200px; height: 200px; }
 
 .val { font-size: 18px; color: @text-secondary; margin-top: 8px; lines: 3; }
+.val.warn { color: #f39c12; }
 
 .input-row { flex-direction: row; align-items: center; margin-bottom: 12px; }
 .input-row .label { font-size: 22px; color: @text-secondary; margin-right: 8px; }

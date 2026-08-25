@@ -40,6 +40,9 @@
 
       <text class="hint">{{ statusText }}</text>
 
+      <div class="btn" @click="loadSettings">
+        <text class="btn-label">加载设置</text>
+      </div>
       <div class="btn" @click="goBack">
         <text class="btn-label">返回首页</text>
       </div>
@@ -62,18 +65,21 @@ export default {
     }
   },
   methods: {
-    onShow() {
-      this.loadSettings()
-    },
+    onShow() {},
     onUnload() {},
     loadSettings() {
-      this.version = TsCtl.getVersion() || '—'
-      this.autoStart = !!TsCtl.isAutostartEnabled()
-      const cfg = TsCtl.readConfigFile('bridge.conf')
-      if (cfg) {
-        // 解析 TARGET=xxx
-        const m = cfg.match(/^TARGET=(.+)$/m)
-        this.bridgeTarget = m ? m[1].trim() : ''
+      this.statusText = '加载中…'
+      try {
+        this.version = TsCtl.getVersion() || '—'
+        this.autoStart = !!TsCtl.isAutostartEnabled()
+        const cfg = TsCtl.readConfigFile('bridge.conf')
+        if (cfg) {
+          const m = cfg.match(/^TARGET=(.+)$/m)
+          this.bridgeTarget = m ? m[1].trim() : ''
+        }
+        this.statusText = '已加载'
+      } catch (e) {
+        this.statusText = '加载失败: ' + String(e)
       }
     },
     goBack() {
