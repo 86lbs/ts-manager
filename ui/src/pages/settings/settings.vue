@@ -44,12 +44,12 @@
         </div>
       </div>
 
-      <!-- 开机自启 -->
+      <!-- 开机自启（只读状态） -->
       <div class="card">
         <text class="card-title">开机自启</text>
-        <text class="desc">设备启动时自动运行 Tailscale</text>
-        <div class="btn" :class="autoStart ? 'down' : 'up'" @click="toggleAutostart">
-          <text class="btn-label">{{ autoStart ? '已启用 (点击禁用)' : '已禁用 (点击启用)' }}</text>
+        <div class="row">
+          <text class="label">设备启动时自动连接</text>
+          <text class="value" :class="autoStart ? 'ok' : 'bad'">{{ autoStart ? '已启用' : '已禁用' }}</text>
         </div>
       </div>
 
@@ -59,10 +59,6 @@
         <div class="row">
           <text class="label">Tailscale 版本</text>
           <text class="value">{{ version }}</text>
-        </div>
-        <div class="row">
-          <text class="label">应用版本</text>
-          <text class="value">0.1.0</text>
         </div>
       </div>
 
@@ -163,18 +159,7 @@ export default {
       this.$falcon.navTo('index', {})
     },
     toggleAutostart() {
-      try {
-        const newState = !this.autoStart
-        const ok = TsCtl.setAutostart(newState)
-        if (ok) {
-          this.autoStart = newState
-          this.statusText = newState ? '开机自启已启用' : '开机自启已禁用'
-        } else {
-          this.statusText = '操作失败'
-        }
-      } catch (e) {
-        this.statusText = '错误: ' + (e && e.message ? e.message : String(e))
-      }
+      // 只读状态，不做开关（避免误关导致设备重启后失联）
     },
   },
 }

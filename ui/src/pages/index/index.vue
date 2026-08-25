@@ -107,7 +107,9 @@ export default {
             const self = j.Self || {}
             const ips = j.Self && j.Self.TailscaleIPs ? j.Self.TailscaleIPs : []
             this.selfIp = ips.length ? ips[0] : '—'
-            this.selfName = self.HostName || '—'
+            // 主机名用 DNSName 短名（与手机端一致），如 ydpen-185
+            const dns = self.DNSName || ''
+            this.selfName = dns ? dns.split('.')[0] : (self.HostName || '—')
             const state = self.BackendState || ''
             this.up = state === 'Running' || ips.length > 0
           } catch (e) {
