@@ -53,11 +53,20 @@ jobs:
 
       - name: Build native libjsapi_tsctl.so
         run: |
-          GCC=$(find $(pwd)/jsapi/toolchains -path '*/bin/*gcc' ! -name '*gcc-*' | head -1)
+          # 优先 buildroot 前缀编译器，其次任意交叉 gcc
+          GCC=$(find $(pwd)/jsapi/toolchains -path '*/bin/*buildroot*gcc' | head -1)
           if [ -z "$GCC" ]; then
-            GCC=$(find $(pwd)/jsapi/toolchains -path '*/bin/*gcc' | head -1)
+            GCC=$(find $(pwd)/jsapi/toolchains -path '*/bin/*-gcc' | head -1)
+          fi
+          if [ -z "$GCC" ]; then
+            GCC=$(find $(pwd)/jsapi/toolchains -name '*-gcc' | head -1)
           fi
           echo "GCC=$GCC"
+          if [ -z "$GCC" ]; then
+            echo "ERROR: no cross gcc found"
+            find jsapi/toolchains -maxdepth 3 -name '*gcc*' | head -10
+            exit 1
+          fi
           export CROSS_TOOLCHAIN_PREFIX=$(dirname "$GCC")/
           echo "PREFIX=$CROSS_TOOLCHAIN_PREFIX"
           cmake -S jsapi -B jsapi/build -DCMAKE_BUILD_TYPE=Release
