@@ -282,3 +282,48 @@ bool TsCtl::getLatestVersion(std::string &version) const
     }
     return true;
 }
+
+// ---- auth url ----
+bool TsCtl::getAuthUrl(std::string &authUrl) const
+{
+    // 先杀旧的后台 up 进程（避免残留）
+    int rc;
+    execCmd("pkill -f 'tailscale.*up --json' 2>/dev/null || true", rc);
+
+    // 后台启动 tailscale up --json，输出到文件
+    int rc;
+    execCmd(
+        "nohup " + std::string(kTailscaleCli) +
+        " --socket=" + kSocket +
+        " up --json --accept-routes > /tmp/ts_auth.json 2>&1 &",
+        rc);
+
+    // 轮询最多 15 秒等 AuthURL 出现
+    for (int i = 0; i < 15; ++i) {
+        std::string out = execCmd("cat /tmp/ts_auth.json 2>/dev/null", rc);
+        if (!out.empty()) {
+            size_t pos = out.find("\"AuthURL\"");
+            if (pos != std::string::npos) {
+                size_t colon = out.find(':', pos);
+                size_t q1 = out.find('"', colon);
+                if (q1 != std::string::npos) {
+                    size_t q2 = out.find('"', q1 + 1);
+                    if (q2 != std::string::npos) {
+                        authUrl = out.substr(q1 + 1, q2 - q1 - 1);
+                        return true;
+                    }
+                }
+            }
+        }
+        ::sleep(1);
+    }
+    // 超时：可能已在线，清理后台进程
+    execCmd("pkill -f 'tailscale.*up --json' 2>/dev/null || true", rc);
+    return false;
+}
+
+void TsCtl::stopAuthWait() const
+{
+    int rc;
+    execCmd("pkill -f 'tailscale.*up --json' 2>/dev/null || true", rc);
+}

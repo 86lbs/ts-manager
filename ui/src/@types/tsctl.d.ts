@@ -17,6 +17,10 @@ declare module 'tsctl' {
     installTailscale(version?: string): Promise<string>
     /** 异步：获取 Tailscale 最新稳定版本号 */
     getLatestVersion(): Promise<string>
+    /** 异步：后台运行 up 并获取 AuthURL（用于二维码）；已在线返回 false */
+    getAuthUrl(): Promise<string>
+    /** 异步：停止后台 up 进程 */
+    stopAuthWait(): Promise<boolean>
     /** 同步：写 /userdisk/tailscale/<name> 配置 */
     writeConfigFile(name: string, content: string): Promise<boolean>
     /** 异步：执行 tailscale CLI 命令，返回 stdout 字符串 */

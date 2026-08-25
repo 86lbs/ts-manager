@@ -18,6 +18,8 @@ extern JSValue createTsCtl(JQModuleEnv *env)
     tpl->SetProtoMethod("setAutostart", &JSTsCtl::setAutostart);
     tpl->SetProtoMethodPromise("installTailscale", &JSTsCtl::installTailscale);
     tpl->SetProtoMethodPromise("getLatestVersion", &JSTsCtl::getLatestVersion);
+    tpl->SetProtoMethodPromise("getAuthUrl", &JSTsCtl::getAuthUrl);
+    tpl->SetProtoMethodPromise("stopAuthWait", &JSTsCtl::stopAuthWait);
 
     tpl->SetProtoMethodPromise("runTailscale", &JSTsCtl::runTailscale);
     tpl->SetProtoMethodPromise("startDaemon", &JSTsCtl::startDaemon);
@@ -135,6 +137,31 @@ void JSTsCtl::getLatestVersion(JQAsyncInfo &info)
             info.postError("get latest version failed");
         else
             info.post(version);
+    } catch (const std::exception &e) {
+        info.postError(e.what());
+    }
+}
+
+void JSTsCtl::getAuthUrl(JQAsyncInfo &info)
+{
+    try {
+        TsCtl *o = getObj(); ASSERT(o != nullptr);
+        std::string url;
+        if (!o->getAuthUrl(url))
+            info.postError("get auth url failed");
+        else
+            info.post(url);
+    } catch (const std::exception &e) {
+        info.postError(e.what());
+    }
+}
+
+void JSTsCtl::stopAuthWait(JQAsyncInfo &info)
+{
+    try {
+        TsCtl *o = getObj(); ASSERT(o != nullptr);
+        o->stopAuthWait();
+        info.post(true);
     } catch (const std::exception &e) {
         info.postError(e.what());
     }

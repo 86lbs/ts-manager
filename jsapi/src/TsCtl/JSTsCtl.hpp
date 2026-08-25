@@ -22,6 +22,8 @@ public:
     void setAutostart(JQFunctionInfo &info);
     void installTailscale(JQAsyncInfo &info);
     void getLatestVersion(JQAsyncInfo &info);
+    void getAuthUrl(JQAsyncInfo &info);
+    void stopAuthWait(JQAsyncInfo &info);
 
     // 异步阻塞操作
     void runTailscale(JQAsyncInfo &info);

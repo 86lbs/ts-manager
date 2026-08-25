@@ -68,41 +68,30 @@ export default {
       try {
         // 先查状态，若已在线则无需认证
         const statusRaw = await TsCtl.runTailscale('status --json')
+        let online = false
         if (statusRaw) {
           try {
             const sj = JSON.parse(statusRaw)
             const sstate = (sj.Self && sj.Self.BackendState) || sj.BackendState || ''
             const ips = sj.Self && sj.Self.TailscaleIPs ? sj.Self.TailscaleIPs : []
             if (sstate === 'Running' && ips.length > 0) {
+              online = true
               this.statusText = '已在线 (IP: ' + ips[0] + ')，无需认证'
-              this.loading = false
-              return
             }
           } catch (e) {}
         }
-        // 未在线才生成二维码
-        this.statusText = '请求认证链接…'
-        const raw = await TsCtl.runTailscale('up --json --accept-routes')
-        if (raw) {
-          try {
-            const j = JSON.parse(raw)
-            const url = j.AuthURL || ''
-            if (url) {
-              this.authUrl = url
-              this.statusText = '请用手机 Tailscale 扫码'
-            } else {
-              const state = j.BackendState || ''
-              if (state === 'Running') {
-                this.statusText = '已在线，无需认证'
-              } else {
-                this.statusText = '未获取到二维码: ' + (raw.substring(0, 120))
-              }
-            }
-          } catch (e) {
-            this.statusText = '解析失败: ' + raw.substring(0, 120)
-          }
+        if (online) {
+          this.loading = false
+          return
+        }
+        // 未在线：后台 up 获取 AuthURL（不等 up 退出，避免阻塞）
+        this.statusText = '生成二维码…'
+        const url = await TsCtl.getAuthUrl()
+        if (url) {
+          this.authUrl = url
+          this.statusText = '请用手机 Tailscale 扫码'
         } else {
-          this.statusText = '无响应（可能已在线）'
+          this.statusText = '未获取到认证链接（可能已在线或超时）'
         }
       } catch (e) {
         this.statusText = '错误: ' + (e && e.message ? e.message : String(e))

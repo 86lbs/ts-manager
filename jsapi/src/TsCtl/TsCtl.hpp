@@ -41,6 +41,14 @@ public:
     // 成功返回 true 并填充 version（如 "1.98.3"）
     bool getLatestVersion(std::string &version) const;
 
+    // 生成登录认证 URL（用于二维码）
+    // 后台运行 tailscale up --json，轮询解析 AuthURL
+    // 成功返回 true 并填充 authUrl；已在线时返回 false 且 out 置空
+    bool getAuthUrl(std::string &authUrl) const;
+
+    // 停止后台的 tailscale up 进程（认证取消/超时用）
+    void stopAuthWait() const;
+
     // ---- test ----
     // 测试 popen 在异步线程是否正常工作
     std::string testPopen() const;
