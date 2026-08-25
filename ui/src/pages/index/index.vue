@@ -4,7 +4,6 @@
       <!-- 顶部标题 + 状态提示 -->
       <div class="topbar">
         <text class="app-title">Tailscale</text>
-        <text class="conn" :class="up ? 'ok' : 'bad'">{{ up ? '已连接' : (daemonRunning ? '未认证' : '离线') }}</text>
         <text class="status-tip" :class="tipClass">{{ statusText }}</text>
       </div>
 
@@ -205,21 +204,14 @@ export default {
 }
 
 .app-title {
+  flex: 1;
   font-size: 30px;
   color: @text-color;
   font-weight: bold;
 }
 
-.conn {
-  font-size: 24px;
-  color: @text-secondary;
-  margin-right: 12px;
-}
-.conn.ok { color: #2ecc71; }
-.conn.bad { color: #e74c3c; }
-
 .status-tip {
-  font-size: 20px;
+  font-size: 22px;
   color: @text-secondary;
 }
 .status-tip.ok { color: #2ecc71; }

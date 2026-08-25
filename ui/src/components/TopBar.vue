@@ -35,11 +35,11 @@ export default {
 }
 
 .back-btn {
-  width: 56px;
-  height: 56px;
+  width: 64px;
+  height: 64px;
   align-items: center;
   justify-content: center;
-  margin-right: 8px;
+  margin-right: 4px;
 }
 
 .back-btn:active {
@@ -47,9 +47,9 @@ export default {
 }
 
 .back-icon {
-  font-size: 44px;
+  font-size: 56px;
   color: @primary;
-  line-height: 1;
+  font-weight: bold;
 }
 
 .page-title {
