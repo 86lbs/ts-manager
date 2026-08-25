@@ -52,10 +52,6 @@
           <text class="row-value" :class="autoStart ? 'ok' : 'bad'">{{ autoStart ? '已启用' : '已禁用' }}</text>
         </div>
       </div>
-
-      <div class="btn" @click="loadSettings">
-        <text class="btn-label">重新加载</text>
-      </div>
     </div>
   </scroller>
 </template>
