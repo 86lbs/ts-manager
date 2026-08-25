@@ -53,15 +53,6 @@
         </div>
       </div>
 
-      <!-- 版本信息 -->
-      <div class="card">
-        <text class="card-title">版本信息</text>
-        <div class="row">
-          <text class="label">Tailscale 版本</text>
-          <text class="value">{{ version }}</text>
-        </div>
-      </div>
-
       <text class="hint">{{ statusText }}</text>
 
       <div class="btn" @click="loadSettings">
@@ -84,7 +75,6 @@ export default {
     return {
       bridgeTarget: '',
       autoStart: false,
-      version: '—',
       statusText: '',
       onlinePeers: [],
       offlinePeers: [],
@@ -99,7 +89,6 @@ export default {
     async loadSettings() {
       this.statusText = '加载中…'
       try {
-        this.version = TsCtl.getVersion() || '—'
         this.autoStart = !!TsCtl.isAutostartEnabled()
         const cfg = TsCtl.readConfigFile('bridge.conf')
         if (cfg) {
@@ -122,12 +111,20 @@ export default {
         const offline = []
         if (raw) {
           const j = JSON.parse(raw)
+          // 本机识别：Self.DNSName 短名 + Self.HostName
+          const self = j.Self || {}
+          const selfDns = (self.DNSName || '').split('.')[0]
+          const selfHost = self.HostName || ''
+          const selfIps = self.TailscaleIPs || []
           const peers = j.Peer || {}
           Object.keys(peers).forEach((key) => {
             const p = peers[key]
             const ips = p.TailscaleIPs || []
             if (!ips.length) return
-            const name = p.HostName || key.substring(0, 12)
+            // 跳过本机的所有身份（含测试产生的重复节点）
+            if (selfIps.indexOf(ips[0]) !== -1) return
+            const dns = (p.DNSName || '').split('.')[0]
+            const name = dns || p.HostName || key.substring(0, 12)
             const entry = { name, ip: ips[0], online: !!p.Online }
             if (p.Online) online.push(entry)
             else offline.push(entry)
