@@ -63,10 +63,26 @@ export default {
     async genAuthUrl() {
       this.loading = true
       this.qrFailed = false
-      this.statusText = '请求认证链接…'
+      this.statusText = '检查状态…'
       this.authUrl = ''
       try {
-        const raw = await TsCtl.runTailscale('up --json')
+        // 先查状态，若已在线则无需认证
+        const statusRaw = await TsCtl.runTailscale('status --json')
+        if (statusRaw) {
+          try {
+            const sj = JSON.parse(statusRaw)
+            const sstate = (sj.Self && sj.Self.BackendState) || sj.BackendState || ''
+            const ips = sj.Self && sj.Self.TailscaleIPs ? sj.Self.TailscaleIPs : []
+            if (sstate === 'Running' && ips.length > 0) {
+              this.statusText = '已在线 (IP: ' + ips[0] + ')，无需认证'
+              this.loading = false
+              return
+            }
+          } catch (e) {}
+        }
+        // 未在线才生成二维码
+        this.statusText = '请求认证链接…'
+        const raw = await TsCtl.runTailscale('up --json --accept-routes')
         if (raw) {
           try {
             const j = JSON.parse(raw)
@@ -74,25 +90,19 @@ export default {
             if (url) {
               this.authUrl = url
               this.statusText = '请用手机 Tailscale 扫码'
-              // 二维码渲染检测：给组件一点时间
-              setTimeout(() => {
-                // 若 qrcode 组件未生成（value 设置了但没有实际渲染），标记失败
-                const el = this.$refs.qrRef
-                this.qrFailed = !el
-              }, 1000)
             } else {
               const state = j.BackendState || ''
               if (state === 'Running') {
                 this.statusText = '已在线，无需认证'
               } else {
-                this.statusText = '未获取到二维码: ' + (j.reason || 'unknown')
+                this.statusText = '未获取到二维码: ' + (raw.substring(0, 120))
               }
             }
           } catch (e) {
-            this.statusText = '解析失败: ' + raw.substring(0, 100)
+            this.statusText = '解析失败: ' + raw.substring(0, 120)
           }
         } else {
-          this.statusText = '无响应'
+          this.statusText = '无响应（可能已在线）'
         }
       } catch (e) {
         this.statusText = '错误: ' + (e && e.message ? e.message : String(e))
