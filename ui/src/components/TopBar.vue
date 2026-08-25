@@ -50,6 +50,8 @@ export default {
   font-size: 56px;
   color: @primary;
   font-weight: bold;
+  line-height: 56px;
+  margin-top: -6px;
 }
 
 .page-title {
