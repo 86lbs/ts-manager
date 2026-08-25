@@ -9,8 +9,8 @@
         <text class="desc">选一个节点作为桥接目标（127.0.0.1:18888 → 目标IP）</text>
 
         <div class="current-row">
-          <text class="label">当前:</text>
-          <text class="value" :class="bridgeTarget ? 'ok' : 'bad'">{{ bridgeTarget || '未设置' }}</text>
+          <text class="cur-label">当前:</text>
+          <text class="cur-value" :class="bridgeTarget ? 'ok' : 'bad'">{{ bridgeTarget || '未设置' }}</text>
         </div>
 
         <text class="list-title">在线节点</text>
@@ -182,10 +182,10 @@ export default {
 .desc { font-size: 22px; color: @text-secondary; margin-bottom: 12px; lines: 2; }
 
 .current-row { flex-direction: row; justify-content: space-between; padding: 6px 0; margin-bottom: 8px; }
-.current-row .label { font-size: 24px; color: @text-secondary; }
-.current-row .value { font-size: 24px; color: @text-color; }
-.current-row .value.ok { color: #2ecc71; }
-.current-row .value.bad { color: #e74c3c; }
+.cur-label { font-size: 24px; color: @text-secondary; }
+.cur-value { font-size: 24px; color: @text-color; }
+.cur-value.ok { color: #2ecc71; }
+.cur-value.bad { color: #e74c3c; }
 
 .list-title { font-size: 22px; color: @text-secondary; margin: 8px 0 6px 0; }
 .node-list { flex-direction: column; }
