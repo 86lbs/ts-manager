@@ -53,7 +53,6 @@ jobs:
 
       - name: Build native libjsapi_tsctl.so
         run: |
-          # 优先 buildroot 前缀编译器，其次任意交叉 gcc
           GCC=$(find $(pwd)/jsapi/toolchains -path '*/bin/*buildroot*gcc' | head -1)
           if [ -z "$GCC" ]; then
             GCC=$(find $(pwd)/jsapi/toolchains -path '*/bin/*-gcc' | head -1)
@@ -67,8 +66,10 @@ jobs:
             find jsapi/toolchains -maxdepth 3 -name '*gcc*' | head -10
             exit 1
           fi
-          export CROSS_TOOLCHAIN_PREFIX=$(dirname "$GCC")/
-          echo "PREFIX=$CROSS_TOOLCHAIN_PREFIX"
+          export CROSS_C_COMPILER="$GCC"
+          export CROSS_CXX_COMPILER="$(dirname "$GCC")/$(basename "$GCC" | sed 's/gcc/g++/')"
+          echo "C=$CROSS_C_COMPILER"
+          echo "CXX=$CROSS_C_COMPILER"
           cmake -S jsapi -B jsapi/build -DCMAKE_BUILD_TYPE=Release
           cmake --build jsapi/build --parallel 2
           file jsapi/build/libjsapi_tsctl.so
