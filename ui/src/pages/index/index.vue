@@ -205,7 +205,7 @@ export default {
 
 .app-title {
   flex: 1;
-  font-size: 28px;
+  font-size: 24px;
   color: @text-color;
   font-weight: bold;
 }
