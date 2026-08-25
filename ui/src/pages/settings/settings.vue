@@ -1,0 +1,219 @@
+<template>
+  <scroller class="scroller">
+    <div class="page">
+      <TopBar title="Tailscale 设置" :tip="statusText" :tip-class="statusClass" />
+
+      <!-- Bridge 配置：节点列表选择 -->
+      <div class="card">
+        <text class="card-title">Bridge 目标</text>
+        <text class="desc">选一个节点作为桥接目标（127.0.0.1:18888 → 目标IP）</text>
+
+        <div class="current-row">
+          <text class="cur-label">当前:</text>
+          <text class="cur-value" :class="bridgeTarget ? 'ok' : 'bad'">{{ bridgeTarget || '未设置' }}</text>
+        </div>
+
+        <text class="list-title">在线节点</text>
+        <div class="node-list">
+          <div
+            v-for="(peer, idx) in onlinePeers"
+            :key="'o' + idx"
+            class="node-item"
+            :class="{ selected: peer.ip === bridgeTarget }"
+            @click="selectPeer(peer)"
+          >
+            <text class="node-name" :class="peer.ip === bridgeTarget ? 'selected' : ''">{{ peer.name }}</text>
+            <text class="node-ip">{{ peer.ip }}</text>
+          </div>
+          <text class="empty" v-if="!onlinePeers.length">无在线节点</text>
+        </div>
+
+        <text class="list-title">离线节点</text>
+        <div class="node-list">
+          <div
+            v-for="(peer, idx) in offlinePeers"
+            :key="'x' + idx"
+            class="node-item"
+            :class="{ selected: peer.ip === bridgeTarget }"
+            @click="selectPeer(peer)"
+          >
+            <text class="node-name" :class="peer.ip === bridgeTarget ? 'selected' : ''">{{ peer.name }}</text>
+            <text class="node-ip">{{ peer.ip }}</text>
+          </div>
+          <text class="empty" v-if="!offlinePeers.length">无离线节点</text>
+        </div>
+      </div>
+
+      <!-- 开机自启（只读状态） -->
+      <div class="card">
+        <text class="card-title">开机自启</text>
+        <div class="row">
+          <text class="row-label">设备启动时自动连接</text>
+          <text class="row-value" :class="autoStart ? 'ok' : 'bad'">{{ autoStart ? '已启用' : '已禁用' }}</text>
+        </div>
+      </div>
+
+      <div class="btn" @click="loadSettings">
+        <text class="btn-label">重新加载</text>
+      </div>
+    </div>
+  </scroller>
+</template>
+
+<script>
+import TopBar from '../../components/TopBar.vue'
+import { TsCtl } from 'tsctl'
+
+export default {
+  name: 'PageSettings',
+  components: { TopBar },
+  props: [],
+  data() {
+    return {
+      bridgeTarget: '',
+      autoStart: false,
+      statusText: '',
+      statusClass: '',
+      onlinePeers: [],
+      offlinePeers: [],
+      loadingPeers: false,
+    }
+  },
+  methods: {
+    onShow() {
+      this.loadSettings()
+    },
+    onUnload() {},
+    async loadSettings() {
+      this.statusText = '加载中…'
+      this.statusClass = ''
+      try {
+        this.autoStart = !!TsCtl.isAutostartEnabled()
+        const cfg = TsCtl.readConfigFile('bridge.conf')
+        if (cfg) {
+          const m = cfg.match(/^TARGET=(.+)$/m)
+          this.bridgeTarget = m ? m[1].trim() : ''
+        }
+        // 加载节点列表
+        await this.loadPeers()
+        this.statusText = '已加载'
+        this.statusClass = 'ok'
+      } catch (e) {
+        this.statusText = '加载失败: ' + String(e)
+        this.statusClass = 'bad'
+      }
+    },
+    async loadPeers() {
+      if (this.loadingPeers) return
+      this.loadingPeers = true
+      try {
+        const raw = await TsCtl.runTailscale('status --json')
+        const online = []
+        const offline = []
+        if (raw) {
+          const j = JSON.parse(raw)
+          // 本机识别：Self.DNSName 短名 + Self.HostName
+          const self = j.Self || {}
+          const selfDns = (self.DNSName || '').split('.')[0]
+          const selfHost = self.HostName || ''
+          const selfIps = self.TailscaleIPs || []
+          const peers = j.Peer || {}
+          Object.keys(peers).forEach((key) => {
+            const p = peers[key]
+            const ips = p.TailscaleIPs || []
+            if (!ips.length) return
+            // 跳过本机的所有身份（含测试产生的重复节点）
+            if (selfIps.indexOf(ips[0]) !== -1) return
+            const dns = (p.DNSName || '').split('.')[0]
+            const name = dns || p.HostName || key.substring(0, 12)
+            const entry = { name, ip: ips[0], online: !!p.Online }
+            if (p.Online) online.push(entry)
+            else offline.push(entry)
+          })
+          online.sort((a, b) => a.name.localeCompare(b.name))
+          offline.sort((a, b) => a.name.localeCompare(b.name))
+        }
+        this.onlinePeers = online
+        this.offlinePeers = offline
+      } catch (e) {
+        this.onlinePeers = []
+        this.offlinePeers = []
+      } finally {
+        this.loadingPeers = false
+      }
+    },
+    goBack() {
+      this.$falcon.navTo('index', {})
+    },
+    async selectPeer(peer) {
+      this.bridgeTarget = peer.ip
+      this.statusText = '保存 ' + peer.name + ' (' + peer.ip + ')…'
+      this.statusClass = ''
+      try {
+        const content = 'TARGET=' + peer.ip + '\n'
+        const ok = await TsCtl.writeConfigFile('bridge.conf', content)
+        if (ok) {
+          this.statusText = '已设为 ' + peer.name
+          this.statusClass = 'ok'
+        } else {
+          this.statusText = '保存失败'
+          this.statusClass = 'bad'
+        }
+      } catch (e) {
+        this.statusText = '错误: ' + String(e)
+        this.statusClass = 'bad'
+      }
+    },
+    toggleAutostart() {
+      // 只读状态，不做开关（避免误关导致设备重启后失联）
+    },
+  },
+}
+</script>
+
+<style lang="less" scoped>
+@import "base.less";
+
+.scroller { width: 750rpx; height: 100%; }
+.page { flex-direction: column; padding: 20px; background-color: @background-color; }
+
+.card { flex-direction: column; padding: 16px; border-radius: @radius-medium; background-color: @card-background-color; margin-bottom: 16px; }
+.card-title { font-size: 26px; color: @text-color; margin-bottom: 8px; }
+.desc { font-size: 20px; color: @text-secondary; margin-bottom: 12px; lines: 2; }
+
+.current-row { flex-direction: row; justify-content: space-between; padding: 6px 0; margin-bottom: 8px; }
+.cur-label { font-size: 22px; color: @text-secondary; }
+.cur-value { font-size: 22px; color: @text-color; }
+.cur-value.ok { color: #2ecc71; }
+.cur-value.bad { color: #e74c3c; }
+
+.list-title { font-size: 20px; color: @text-secondary; margin: 8px 0 6px 0; }
+.node-list { flex-direction: column; }
+.node-item {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+}
+.node-item:active { background-color: #3a3a3a; }
+.node-item.selected { background-color: rgba(16, 142, 233, 0.3); }
+.node-name { font-size: 22px; color: @text-color; }
+.node-name.selected { color: @primary; }
+.node-ip { font-size: 18px; color: @text-secondary; }
+.empty { font-size: 20px; color: @text-secondary; padding: 8px 0; }
+
+.row { flex-direction: row; justify-content: space-between; padding: 6px 0; }
+.row-label { font-size: 22px; color: @text-secondary; }
+.row-value { font-size: 22px; color: @text-color; }
+.row-value.ok { color: #2ecc71; }
+.row-value.bad { color: #e74c3c; }
+
+.btn { flex-direction: row; align-items: center; justify-content: center; height: 48px; border-radius: @radius-medium; background-color: @card-background-color; margin-bottom: 8px; }
+.btn.primary { background-color: @primary; }
+.btn.up { background-color: #27ae60; }
+.btn.down { background-color: #c0392b; }
+.btn-label { color: #ffffff; font-size: 26px; }
+.btn:active { opacity: 0.6; }
+</style>
