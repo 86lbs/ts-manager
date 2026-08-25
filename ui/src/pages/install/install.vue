@@ -27,17 +27,13 @@
       <!-- 安装 -->
       <div class="card">
         <text class="card-title">安装 / 更新</text>
-        <text class="desc">从 pkgs.tailscale.com 下载安装。</text>
+        <text class="desc">自动获取并安装最新稳定版（无需指定版本）</text>
         <div class="row">
           <text class="label">最新版本</text>
           <text class="value" :class="latestVersion ? 'ok' : 'bad'">{{ latestVersion || '获取失败' }}</text>
         </div>
-        <div class="input-row">
-          <text class="label">版本:</text>
-          <input class="input" ref="versionInput" type="text" v-model="targetVersion" placeholder="1.98.3" />
-        </div>
         <div class="btn primary" @click="doInstall">
-          <text class="btn-label">{{ installing ? '安装中…' : (installed ? '更新' : '安装') }}</text>
+          <text class="btn-label">{{ installing ? '安装中…' : (installed ? '更新到最新版' : '安装最新版') }}</text>
         </div>
         <text class="hint">{{ statusText }}</text>
       </div>
@@ -67,7 +63,6 @@ export default {
       currentVersion: '—',
       daemonRunning: false,
       latestVersion: '',
-      targetVersion: '1.98.3',
       installing: false,
       statusText: '',
       logText: '',
@@ -85,7 +80,6 @@ export default {
         this.installed = v !== 'not-installed' && !!v
         this.currentVersion = this.installed ? v : '未安装'
         this.daemonRunning = !!TsCtl.isDaemonRunning()
-        if (this.installed) this.targetVersion = v
       } catch (e) {
         this.statusText = '读取状态失败: ' + String(e)
       }
@@ -109,8 +103,7 @@ export default {
       this.logText = ''
       this.statusText = '安装中，请稍候…'
       try {
-        const ver = (this.targetVersion || '').trim()
-        const log = await TsCtl.installTailscale(ver || undefined)
+        const log = await TsCtl.installTailscale()
         this.logText = log
         this.statusText = '安装流程已执行'
         this.loadState()

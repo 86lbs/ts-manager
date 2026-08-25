@@ -155,9 +155,14 @@ bool TsCtl::setAutostart(bool enable) const
 // ---- install/update ----
 bool TsCtl::installTailscale(const std::string &version, std::string &log) const
 {
-    // 目标版本：默认最新（与脚本一致），校验只含 [0-9.]
-    std::string ver = version.empty() ? "1.98.3" : version;
-    if (ver.find_first_not_of("0123456789.") != std::string::npos) {
+    // 目标版本：默认最新（通过 getLatestVersion 获取），校验只含 [0-9.]
+    std::string ver = version.empty() ? "" : version;
+    if (ver.empty()) {
+        if (!getLatestVersion(ver) || ver.empty()) {
+            log = "获取最新版本失败，请检查网络";
+            return false;
+        }
+    } else if (ver.find_first_not_of("0123456789.") != std::string::npos) {
         log = "版本号不合法: " + ver;
         return false;
     }

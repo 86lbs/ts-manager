@@ -17,16 +17,21 @@
         <text class="val warn" v-if="authUrl && !loading && qrFailed">（二维码未渲染，请复制上方链接到手机浏览器打开）</text>
       </div>
 
-      <!-- Auth Key 输入 -->
+      <!-- Auth Key 输入（默认折叠，高级选项） -->
       <div class="card">
-        <text class="card-title">Auth Key 认证</text>
-        <text class="desc">输入 Tailscale 控制台生成的预认证密钥</text>
-        <div class="input-row">
-          <text class="label">Auth Key:</text>
-          <input class="input" ref="authKeyInput" type="text" v-model="authKey" placeholder="tskey-auth-..." />
+        <div class="adv-toggle" @click="showAuthKey = !showAuthKey">
+          <text class="card-title">Auth Key 认证</text>
+          <text class="adv-hint">{{ showAuthKey ? '收起 ▲' : '展开 ▼' }}</text>
         </div>
-        <div class="btn primary" @click="doAuthKey">
-          <text class="btn-label">{{ loading ? '连接中…' : '认证并连接' }}</text>
+        <div v-if="showAuthKey">
+          <text class="desc">输入 Tailscale 控制台生成的预认证密钥（无手机扫码时使用）</text>
+          <div class="input-row">
+            <text class="label">Auth Key:</text>
+            <input class="input" ref="authKeyInput" type="text" v-model="authKey" placeholder="tskey-auth-..." />
+          </div>
+          <div class="btn primary" @click="doAuthKey">
+            <text class="btn-label">{{ loading ? '连接中…' : '认证并连接' }}</text>
+          </div>
         </div>
       </div>
 
@@ -49,6 +54,7 @@ export default {
     return {
       authUrl: '',
       authKey: '',
+      showAuthKey: false,
       loading: false,
       qrFailed: false,
       statusText: '',
@@ -132,6 +138,9 @@ export default {
 .card { flex-direction: column; padding: 16px; border-radius: @radius-medium; background-color: @card-background-color; margin-bottom: 16px; }
 .card-title { font-size: 28px; color: @text-color; margin-bottom: 8px; }
 .desc { font-size: 22px; color: @text-secondary; margin-bottom: 12px; lines: 2; }
+
+.adv-toggle { flex-direction: row; align-items: center; justify-content: space-between; }
+.adv-hint { font-size: 20px; color: @text-secondary; }
 
 .qrcode-wrap { align-items: center; justify-content: center; padding: 16px; }
 .qrcode { width: 200px; height: 200px; }
