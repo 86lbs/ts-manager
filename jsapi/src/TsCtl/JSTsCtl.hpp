@@ -21,6 +21,7 @@ public:
     void isAutostartEnabled(JQFunctionInfo &info);
     void setAutostart(JQFunctionInfo &info);
     void installTailscale(JQAsyncInfo &info);
+    void getLatestVersion(JQAsyncInfo &info);
 
     // 异步阻塞操作
     void runTailscale(JQAsyncInfo &info);

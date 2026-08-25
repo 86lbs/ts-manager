@@ -37,6 +37,10 @@ public:
     // 返回安装日志（多行）；失败时返回 false
     bool installTailscale(const std::string &version, std::string &log) const;
 
+    // 从 pkgs.tailscale.com 获取最新稳定版版本号
+    // 成功返回 true 并填充 version（如 "1.98.3"）
+    bool getLatestVersion(std::string &version) const;
+
     // ---- test ----
     // 测试 popen 在异步线程是否正常工作
     std::string testPopen() const;

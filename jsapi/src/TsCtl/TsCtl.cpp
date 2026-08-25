@@ -241,3 +241,32 @@ bool TsCtl::installTailscale(const std::string &version, std::string &log) const
     log = execCmd(std::string("sh ") + scriptPath + " 2>&1", rc);
     return true;
 }
+
+// ---- latest version ----
+bool TsCtl::getLatestVersion(std::string &version) const
+{
+    int rc;
+    std::string out = execCmd(
+        "curl -fsSL --max-time 15 'https://pkgs.tailscale.com/stable/?mode=json' 2>/dev/null",
+        rc);
+    if (out.empty()) return false;
+
+    // 解析 JSON 里的 "Version":"x.y.z"（简单字符串查找，不引 JSON 库）
+    size_t vpos = out.find("\"Version\"");
+    if (vpos == std::string::npos) return false;
+    size_t colon = out.find(':', vpos);
+    if (colon == std::string::npos) return false;
+    size_t q1 = out.find('"', colon);
+    if (q1 == std::string::npos) return false;
+    size_t q2 = out.find('"', q1 + 1);
+    if (q2 == std::string::npos) return false;
+
+    version = out.substr(q1 + 1, q2 - q1 - 1);
+    // 校验版本号格式
+    if (version.empty() ||
+        version.find_first_not_of("0123456789.-") != std::string::npos) {
+        version.clear();
+        return false;
+    }
+    return true;
+}

@@ -27,7 +27,11 @@
       <!-- 安装 -->
       <div class="card">
         <text class="card-title">安装 / 更新</text>
-        <text class="desc">从 pkgs.tailscale.com 下载安装。建议使用默认版本。</text>
+        <text class="desc">从 pkgs.tailscale.com 下载安装。</text>
+        <div class="row">
+          <text class="label">最新版本</text>
+          <text class="value" :class="latestVersion ? 'ok' : 'bad'">{{ latestVersion || '获取失败' }}</text>
+        </div>
         <div class="input-row">
           <text class="label">版本:</text>
           <input class="input" ref="versionInput" type="text" v-model="targetVersion" placeholder="1.98.3" />
@@ -62,6 +66,7 @@ export default {
       installed: false,
       currentVersion: '—',
       daemonRunning: false,
+      latestVersion: '',
       targetVersion: '1.98.3',
       installing: false,
       statusText: '',
@@ -71,6 +76,7 @@ export default {
   methods: {
     onShow() {
       this.loadState()
+      this.fetchLatestVersion()
     },
     onUnload() {},
     loadState() {
@@ -86,6 +92,17 @@ export default {
     },
     goBack() {
       this.$falcon.navTo('index', {})
+    },
+    async fetchLatestVersion() {
+      try {
+        const v = await TsCtl.getLatestVersion()
+        if (v) {
+          this.latestVersion = v
+          this.targetVersion = v
+        }
+      } catch (e) {
+        this.latestVersion = ''
+      }
     },
     async doInstall() {
       this.installing = true

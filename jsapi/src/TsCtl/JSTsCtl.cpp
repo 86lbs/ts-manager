@@ -17,6 +17,7 @@ extern JSValue createTsCtl(JQModuleEnv *env)
     tpl->SetProtoMethod("isAutostartEnabled", &JSTsCtl::isAutostartEnabled);
     tpl->SetProtoMethod("setAutostart", &JSTsCtl::setAutostart);
     tpl->SetProtoMethodPromise("installTailscale", &JSTsCtl::installTailscale);
+    tpl->SetProtoMethodPromise("getLatestVersion", &JSTsCtl::getLatestVersion);
 
     tpl->SetProtoMethodPromise("runTailscale", &JSTsCtl::runTailscale);
     tpl->SetProtoMethodPromise("startDaemon", &JSTsCtl::startDaemon);
@@ -120,6 +121,20 @@ void JSTsCtl::installTailscale(JQAsyncInfo &info)
             info.postError(log.empty() ? "install failed" : log);
         else
             info.post(log);
+    } catch (const std::exception &e) {
+        info.postError(e.what());
+    }
+}
+
+void JSTsCtl::getLatestVersion(JQAsyncInfo &info)
+{
+    try {
+        TsCtl *o = getObj(); ASSERT(o != nullptr);
+        std::string version;
+        if (!o->getLatestVersion(version))
+            info.postError("get latest version failed");
+        else
+            info.post(version);
     } catch (const std::exception &e) {
         info.postError(e.what());
     }
