@@ -31,15 +31,15 @@ export default {
 .topbar {
   flex-direction: row;
   align-items: center;
-  padding: 4px 0 10px 0;
+  padding: 2px 0 6px 0;
 }
 
 .back-btn {
-  width: 64px;
-  height: 64px;
+  width: 44px;
+  height: 44px;
   align-items: center;
   justify-content: center;
-  margin-right: 4px;
+  margin-right: 2px;
 }
 
 .back-btn:active {
@@ -47,11 +47,11 @@ export default {
 }
 
 .back-icon {
-  font-size: 52px;
+  font-size: 36px;
   color: @primary;
   font-weight: bold;
-  line-height: 56px;
-  margin-top: -6px;
+  line-height: 36px;
+  margin-top: -4px;
 }
 
 .page-title {

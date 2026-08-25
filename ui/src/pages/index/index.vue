@@ -200,7 +200,7 @@ export default {
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 0 8px 0;
+  padding: 2px 0 6px 0;
 }
 
 .app-title {
