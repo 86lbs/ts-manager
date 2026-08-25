@@ -55,49 +55,8 @@ jobs:
 
       - name: Inject PStore props & repackage
         run: |
-          cd ui
-          AMR=$(find . -iname '*.amr' | head -1)
-          echo "AMR: $AMR"
-          # 解包 → 注入 props → 重打包
-          WORK=/tmp/amr_repack
-          rm -rf $WORK && mkdir -p $WORK
-          cd $WORK
-          python3 -c "import zipfile,sys; zipfile.ZipFile(sys.argv[1]).extractall('.')" ../$AMR
-          echo "=== 原始 manifest ==="
-          cat manifest.json
-          python3 << 'PYEOF'
-import json
-with open('manifest.json') as f:
-    m = json.load(f)
-# 注入 PStore props：桌面显示 + 可卸载
-m['props'] = {
-    'addDesktop': {
-        'x3s_platform': True,
-        'y02_1_platform': True
-    },
-    'supportUnInstall': True
-}
-with open('manifest.json', 'w') as f:
-    json.dump(m, f, indent=2, ensure_ascii=False)
-PYEOF
-          echo "=== 注入后 manifest ==="
-          cat manifest.json
-          # 重新打包为 .amr（ZIP 容器，入口为 app.js.bin 等）
-          cd $WORK
-          python3 -c "
-import zipfile, os
-amr = '../$AMR'
-with zipfile.ZipFile(amr, 'w', zipfile.ZIP_DEFLATED) as z:
-    for root, dirs, files in os.walk('.'):
-        for f in files:
-            p = os.path.join(root, f)
-            z.write(p, os.path.relpath(p, '.'))
-print('repacked:', amr)
-"
-          cd ..
-          ls -la $WORK/../$AMR
-          # 显示最终包内容
-          unzip -l $AMR | head -10
+          python3 .github/scripts/inject-props.py 800186lbstsmanage ui
+          find ui -iname '*.amr'
 
       - name: Upload AMR artifacts
         uses: actions/upload-artifact@v4
