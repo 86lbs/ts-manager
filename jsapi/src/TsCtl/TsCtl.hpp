@@ -25,6 +25,13 @@ public:
     // name: "bridge.conf" 等；不存在返回空串
     std::string readConfigFile(const std::string &name) const;
 
+    // 开机自启检测（/etc/init.d/S99tailscale 是否存在）
+    bool isAutostartEnabled() const;
+
+    // 设置开机自启
+    // enable: true=创建, false=删除
+    bool setAutostart(bool enable) const;
+
     // ---- test ----
     // 测试 popen 在异步线程是否正常工作
     std::string testPopen() const;

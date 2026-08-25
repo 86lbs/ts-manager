@@ -18,6 +18,8 @@ public:
     void isDaemonRunning(JQFunctionInfo &info);
     void readConfigFile(JQFunctionInfo &info);
     void testPopen(JQFunctionInfo &info);
+    void isAutostartEnabled(JQFunctionInfo &info);
+    void setAutostart(JQFunctionInfo &info);
 
     // 异步阻塞操作
     void runTailscale(JQAsyncInfo &info);

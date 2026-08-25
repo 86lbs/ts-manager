@@ -11,6 +11,12 @@
           </text>
         </div>
         <div class="row">
+          <text class="label">网络状态</text>
+          <text class="value" :class="up ? 'ok' : 'bad'">
+            {{ up ? '已连接' : '已断开' }}
+          </text>
+        </div>
+        <div class="row">
           <text class="label">版本</text>
           <text class="value">{{ version }}</text>
         </div>
@@ -32,6 +38,15 @@
       </div>
       <div class="btn down" @click="doDown">
         <text class="btn-label">断开 (down)</text>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="btn" @click="goAuth">
+        <text class="btn-label">认证设置</text>
+      </div>
+      <div class="btn" @click="goSettings">
+        <text class="btn-label">系统设置</text>
       </div>
 
       <text class="hint">{{ statusText }}</text>
@@ -119,6 +134,12 @@ export default {
       } catch (e) {
         this.statusText = '错误: ' + (e && e.message ? e.message : String(e))
       }
+    },
+    goAuth() {
+      this.$falcon.navTo('auth', {})
+    },
+    goSettings() {
+      this.$falcon.navTo('settings', {})
     },
   },
 }
@@ -210,5 +231,11 @@ export default {
   text-align: center;
   margin-top: 8px;
   lines: 2;
+}
+
+.divider {
+  height: 1px;
+  background-color: #333333;
+  margin: 8px 0 16px 0;
 }
 </style>

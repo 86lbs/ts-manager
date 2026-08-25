@@ -1,6 +1,8 @@
 {
   "pages": {
-    "index": "pages/index/index.js"
+    "index": "pages/index/index.js",
+    "auth": "pages/auth/auth.js",
+    "settings": "pages/settings/settings.js"
   },
   "options": {
     "style": {

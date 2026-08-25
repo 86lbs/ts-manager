@@ -7,12 +7,18 @@ declare module 'tsctl' {
     isDaemonRunning(): boolean
     /** 同步：读 /userdisk/tailscale/<name> 配置（如 bridge.conf） */
     readConfigFile(name: string): string
-    /** 异步：执行 tailscale CLI 命令，返回 { ok, output } */
-    runTailscale(args: string): Promise<{ ok: boolean; output: string }>
-    /** 异步：执行 start_tailscale.sh 启动 daemon */
-    startDaemon(): Promise<{ ok: boolean; output: string }>
-    /** 异步：写 /userdisk/tailscale/<name> 配置 */
+    /** 同步：测试 popen 是否正常 */
+    testPopen(): string
+    /** 同步：开机自启是否已启用 */
+    isAutostartEnabled(): boolean
+    /** 同步：设置开机自启 */
+    setAutostart(enable: boolean): boolean
+    /** 同步：写 /userdisk/tailscale/<name> 配置 */
     writeConfigFile(name: string, content: string): Promise<boolean>
+    /** 异步：执行 tailscale CLI 命令，返回 stdout 字符串 */
+    runTailscale(args: string): Promise<string>
+    /** 异步：执行 start_tailscale.sh 启动 daemon */
+    startDaemon(): Promise<string>
   }
   export const TsCtl: TsCtl
 }

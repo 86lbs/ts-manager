@@ -14,6 +14,8 @@ extern JSValue createTsCtl(JQModuleEnv *env)
     tpl->SetProtoMethod("isDaemonRunning", &JSTsCtl::isDaemonRunning);
     tpl->SetProtoMethod("readConfigFile", &JSTsCtl::readConfigFile);
     tpl->SetProtoMethod("testPopen", &JSTsCtl::testPopen);
+    tpl->SetProtoMethod("isAutostartEnabled", &JSTsCtl::isAutostartEnabled);
+    tpl->SetProtoMethod("setAutostart", &JSTsCtl::setAutostart);
 
     tpl->SetProtoMethodPromise("runTailscale", &JSTsCtl::runTailscale);
     tpl->SetProtoMethodPromise("startDaemon", &JSTsCtl::startDaemon);
@@ -74,6 +76,30 @@ void JSTsCtl::testPopen(JQFunctionInfo &info)
         ASSERT(info.Length() == 0);
         TsCtl *o = getObj(); ASSERT(o != nullptr);
         info.GetReturnValue().Set(o->testPopen());
+    } catch (const std::exception &e) {
+        info.GetReturnValue().ThrowInternalError(e.what());
+    }
+}
+
+void JSTsCtl::isAutostartEnabled(JQFunctionInfo &info)
+{
+    try {
+        ASSERT(info.Length() == 0);
+        TsCtl *o = getObj(); ASSERT(o != nullptr);
+        info.GetReturnValue().Set(o->isAutostartEnabled());
+    } catch (const std::exception &e) {
+        info.GetReturnValue().ThrowInternalError(e.what());
+    }
+}
+
+void JSTsCtl::setAutostart(JQFunctionInfo &info)
+{
+    try {
+        ASSERT(info.Length() == 1);
+        JSContext *ctx = info.GetContext();
+        bool enable = JS_ToBool(ctx, info[0]);
+        TsCtl *o = getObj(); ASSERT(o != nullptr);
+        info.GetReturnValue().Set(o->setAutostart(enable));
     } catch (const std::exception &e) {
         info.GetReturnValue().ThrowInternalError(e.what());
     }
