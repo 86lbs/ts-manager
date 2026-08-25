@@ -93,7 +93,7 @@ export default {
 .page { flex-direction: column; padding: 20px; background-color: @background-color; }
 
 .card { flex-direction: column; padding: 16px; border-radius: @radius-medium; background-color: @card-background-color; margin-bottom: 16px; }
-.card-title { font-size: 26px; color: @text-color; margin-bottom: 8px; }
+.card-title { font-size: 24px; color: @text-color; margin-bottom: 8px; }
 .desc { font-size: 20px; color: @text-secondary; margin-bottom: 12px; lines: 2; }
 
 .qrcode-wrap { align-items: center; justify-content: center; padding: 16px; }
@@ -104,6 +104,6 @@ export default {
 
 .btn { flex-direction: row; align-items: center; justify-content: center; height: 48px; border-radius: @radius-medium; background-color: @card-background-color; margin-bottom: 8px; }
 .btn.primary { background-color: @primary; }
-.btn-label { color: #ffffff; font-size: 26px; }
+.btn-label { color: #ffffff; font-size: 22px; }
 .btn:active { opacity: 0.6; }
 </style>

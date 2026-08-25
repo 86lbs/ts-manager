@@ -174,7 +174,7 @@ export default {
 .page { flex-direction: column; padding: 20px; background-color: @background-color; }
 
 .card { flex-direction: column; padding: 16px; border-radius: @radius-medium; background-color: @card-background-color; margin-bottom: 16px; }
-.card-title { font-size: 26px; color: @text-color; margin-bottom: 8px; }
+.card-title { font-size: 24px; color: @text-color; margin-bottom: 8px; }
 .desc { font-size: 20px; color: @text-secondary; margin-bottom: 12px; lines: 2; }
 
 .current-row { flex-direction: row; justify-content: space-between; padding: 6px 0; margin-bottom: 8px; }
@@ -210,6 +210,6 @@ export default {
 .btn.primary { background-color: @primary; }
 .btn.up { background-color: #27ae60; }
 .btn.down { background-color: #c0392b; }
-.btn-label { color: #ffffff; font-size: 26px; }
+.btn-label { color: #ffffff; font-size: 22px; }
 .btn:active { opacity: 0.6; }
 </style>
