@@ -16,6 +16,7 @@ extern JSValue createTsCtl(JQModuleEnv *env)
     tpl->SetProtoMethod("testPopen", &JSTsCtl::testPopen);
     tpl->SetProtoMethod("isAutostartEnabled", &JSTsCtl::isAutostartEnabled);
     tpl->SetProtoMethod("setAutostart", &JSTsCtl::setAutostart);
+    tpl->SetProtoMethodPromise("installTailscale", &JSTsCtl::installTailscale);
 
     tpl->SetProtoMethodPromise("runTailscale", &JSTsCtl::runTailscale);
     tpl->SetProtoMethodPromise("startDaemon", &JSTsCtl::startDaemon);
@@ -102,6 +103,25 @@ void JSTsCtl::setAutostart(JQFunctionInfo &info)
         info.GetReturnValue().Set(o->setAutostart(enable));
     } catch (const std::exception &e) {
         info.GetReturnValue().ThrowInternalError(e.what());
+    }
+}
+
+void JSTsCtl::installTailscale(JQAsyncInfo &info)
+{
+    try {
+        // 参数可选：版本号（字符串）
+        std::string version;
+        if (info.Length() >= 1 && info[0].is_string())
+            version = info[0].string_value();
+
+        TsCtl *o = getObj(); ASSERT(o != nullptr);
+        std::string log;
+        if (!o->installTailscale(version, log))
+            info.postError(log.empty() ? "install failed" : log);
+        else
+            info.post(log);
+    } catch (const std::exception &e) {
+        info.postError(e.what());
     }
 }
 

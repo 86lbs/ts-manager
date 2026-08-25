@@ -42,6 +42,9 @@
 
       <div class="divider"></div>
 
+      <div class="btn" @click="goInstall">
+        <text class="btn-label">安装 / 更新</text>
+      </div>
       <div class="btn" @click="goAuth">
         <text class="btn-label">认证设置</text>
       </div>
@@ -134,6 +137,9 @@ export default {
       } catch (e) {
         this.statusText = '错误: ' + (e && e.message ? e.message : String(e))
       }
+    },
+    goInstall() {
+      this.$falcon.navTo('install', {})
     },
     goAuth() {
       this.$falcon.navTo('auth', {})

@@ -32,6 +32,11 @@ public:
     // enable: true=创建, false=删除
     bool setAutostart(bool enable) const;
 
+    // 安装/更新 Tailscale
+    // version: 目标版本（如 "1.98.3"），空则用默认
+    // 返回安装日志（多行）；失败时返回 false
+    bool installTailscale(const std::string &version, std::string &log) const;
+
     // ---- test ----
     // 测试 popen 在异步线程是否正常工作
     std::string testPopen() const;

@@ -2,7 +2,8 @@
   "pages": {
     "index": "pages/index/index.js",
     "auth": "pages/auth/auth.js",
-    "settings": "pages/settings/settings.js"
+    "settings": "pages/settings/settings.js",
+    "install": "pages/install/install.js"
   },
   "options": {
     "style": {

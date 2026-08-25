@@ -151,3 +151,93 @@ bool TsCtl::setAutostart(bool enable) const
         return ::unlink(path) == 0;
     }
 }
+
+// ---- install/update ----
+bool TsCtl::installTailscale(const std::string &version, std::string &log) const
+{
+    // 目标版本：默认最新（与脚本一致），校验只含 [0-9.]
+    std::string ver = version.empty() ? "1.98.3" : version;
+    if (ver.find_first_not_of("0123456789.") != std::string::npos) {
+        log = "版本号不合法: " + ver;
+        return false;
+    }
+
+    // 检测架构
+    int rc;
+    std::string arch = execCmd("uname -m", rc);
+    std::string tsArch;
+    if (arch.find("aarch64") != std::string::npos) tsArch = "arm64";
+    else if (arch.find("armv7") != std::string::npos || arch.find("armv8") != std::string::npos) tsArch = "arm";
+    else if (arch.find("x86_64") != std::string::npos) tsArch = "amd64";
+    else { log = "不支持架构: " + arch; return false; }
+
+    // 生成安装脚本（参考 install_tailscale.sh，保留已有 state 避免重新认证）
+    std::string script =
+        "set -e\n"
+        "BASE=/userdisk/tailscale\n"
+        "VERSION=" + ver + "\n"
+        "TSARCH=" + tsArch + "\n"
+        "unset ALL_PROXY all_proxy HTTP_PROXY http_proxy HTTPS_PROXY https_proxy NO_PROXY no_proxy\n"
+        "echo '[1/6] 检测架构: $(uname -m) -> '${TSARCH}\n"
+        "mkdir -p $BASE\n"
+        "echo '[2/6] 下载 tailscale_'${VERSION}'_'${TSARCH}'.tgz...'\n"
+        "URL=\"https://pkgs.tailscale.com/stable/tailscale_${VERSION}_${TSARCH}.tgz\"\n"
+        "curl -fsSL \"$URL\" -o /tmp/ts_install.tgz || { echo '下载失败: $URL'; exit 1; }\n"
+        "echo '[3/6] 校验 sha256...'\n"
+        "if command -v sha256sum >/dev/null 2>&1; then\n"
+        "  EXPECTED=$(curl -fsSL \"${URL}.sha256\" 2>/dev/null | awk '{print $1}' || echo '')\n"
+        "  if [ -n \"$EXPECTED\" ]; then\n"
+        "    ACTUAL=$(sha256sum /tmp/ts_install.tgz | awk '{print $1}')\n"
+        "    if [ \"$EXPECTED\" != \"$ACTUAL\" ]; then\n"
+        "      echo '哈希校验失败!'; exit 1;\n"
+        "    fi\n"
+        "    echo '哈希校验通过'\n"
+        "  fi\n"
+        "fi\n"
+        "echo '[4/6] 解压部署...'\n"
+        "rm -rf /tmp/ts_pkg\n"
+        "mkdir -p /tmp/ts_pkg\n"
+        "tar -xzf /tmp/ts_install.tgz -C /tmp/ts_pkg || { echo '解压失败'; exit 1; }\n"
+        "PKGDIR=$(find /tmp/ts_pkg -maxdepth 2 -type f -name tailscale | head -1 | xargs dirname 2>/dev/null || echo /tmp/ts_pkg)\n"
+        "# tailscale tgz 顶层目录名带版本，定位实际目录\n"
+        "SRC=$(find /tmp/ts_pkg -name 'tailscale' -type f | head -1 | xargs dirname)\n"
+        "echo '  包目录: '$SRC\n"
+        "cp \"$SRC/tailscale\" $BASE/tailscale\n"
+        "cp \"$SRC/tailscaled\" $BASE/tailscaled\n"
+        "chmod 755 $BASE/tailscale $BASE/tailscaled\n"
+        "rm -rf /tmp/ts_pkg /tmp/ts_install.tgz\n"
+        "echo '[5/6] 配置开机自启...'\n"
+        "if [ -x \"$BASE/start_tailscale.sh\" ]; then :; else\n"
+        "  cat > $BASE/start_tailscale.sh << 'SCRIPT'\n"
+        "#!/bin/sh\n"
+        "BASE=/userdisk/tailscale\n"
+        "SOCKET=$BASE/tailscaled.sock\n"
+        "STATE=$BASE/tailscaled.state\n"
+        "LOG=$BASE/tailscaled.log\n"
+        "if ! pgrep -x tailscaled >/dev/null 2>&1; then\n"
+        "  unset ALL_PROXY all_proxy HTTP_PROXY http_proxy HTTPS_PROXY https_proxy NO_PROXY no_proxy\n"
+        "  nohup $BASE/tailscaled --state=$STATE --socket=$SOCKET --tun=userspace-networking --socks5-server=localhost:1055 >> $LOG 2>&1 &\n"
+        "  for i in 1 2 3; do\n"
+        "    [ -S \"$SOCKET\" ] && break\n"
+        "    sleep 2\n"
+        "  done\n"
+        "fi\n"
+        "SCRIPT\n"
+        "  chmod 755 $BASE/start_tailscale.sh\n"
+        "fi\n"
+        "echo '[6/6] 安装完成: tailscale '${VERSION}\n"
+        "$BASE/tailscale --socket=$BASE/tailscaled.sock version 2>/dev/null | head -1 || true\n";
+
+    // 写安装脚本到临时文件再执行（避免 shell 引号冲突）
+    const char *scriptPath = "/tmp/ts_install.sh";
+    {
+        std::ofstream out(scriptPath, std::ios::trunc);
+        if (!out) { log = "无法写安装脚本"; return false; }
+        out << script;
+        out.flush();
+        if (!out.good()) { log = "写安装脚本失败"; return false; }
+        ::chmod(scriptPath, 0755);
+    }
+    log = execCmd(std::string("sh ") + scriptPath + " 2>&1", rc);
+    return true;
+}

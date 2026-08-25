@@ -13,6 +13,8 @@ declare module 'tsctl' {
     isAutostartEnabled(): boolean
     /** 同步：设置开机自启 */
     setAutostart(enable: boolean): boolean
+    /** 异步：安装/更新 Tailscale（可选版本号），返回安装日志 */
+    installTailscale(version?: string): Promise<string>
     /** 同步：写 /userdisk/tailscale/<name> 配置 */
     writeConfigFile(name: string, content: string): Promise<boolean>
     /** 异步：执行 tailscale CLI 命令，返回 stdout 字符串 */

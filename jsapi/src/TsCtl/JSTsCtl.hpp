@@ -20,6 +20,7 @@ public:
     void testPopen(JQFunctionInfo &info);
     void isAutostartEnabled(JQFunctionInfo &info);
     void setAutostart(JQFunctionInfo &info);
+    void installTailscale(JQAsyncInfo &info);
 
     // 异步阻塞操作
     void runTailscale(JQAsyncInfo &info);
